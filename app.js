@@ -101,30 +101,47 @@ function getSuggestedRaiseSize(scenario) {
   }
 }
 
+// ===== ACTIVE POSITIONS BY TABLE SIZE =====
+// 6-max: positions removed from early position first
+function getActivePositions(tablePlayers) {
+  // Full table positions in action order
+  const all = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+  if (tablePlayers >= 6) return all;
+  if (tablePlayers === 5) return ['HJ', 'CO', 'BTN', 'SB', 'BB'];
+  if (tablePlayers === 4) return ['CO', 'BTN', 'SB', 'BB'];
+  if (tablePlayers === 3) return ['BTN', 'SB', 'BB'];
+  return ['SB', 'BB']; // heads up
+}
+
 // ===== SCENARIO GENERATION =====
 function generateScenario() {
   const stage = pick(TOURNAMENT_STAGES);
-  const heroPos = pick(POSITIONS);
   
-  // Generate stacks for all players
+  // Determine players left first, then table size
+  const playersLeft = randInt(stage.playersLeftRange[0], stage.playersLeftRange[1]);
+  const tablePlayers = Math.min(6, playersLeft);
+  const activePositions = getActivePositions(tablePlayers);
+  
+  const heroPos = pick(activePositions);
+  
+  // Generate stacks only for active players
   const stacks = {};
-  POSITIONS.forEach(pos => {
+  activePositions.forEach(pos => {
     stacks[pos] = randInt(stage.stackRange[0], stage.stackRange[1]);
   });
   const heroStack = stacks[heroPos];
   const stackCat = getStackCategory(heroStack);
   
   // Determine scenario type
-  const scenarioType = pickScenarioType(heroPos, stackCat);
+  const scenarioType = pickScenarioType(heroPos, stackCat, activePositions);
   
   // Generate pre-actions
-  const { actionsBefore, openerPosition, shoverStack, pot } = generatePreActions(heroPos, stacks, scenarioType);
+  const { actionsBefore, openerPosition, shoverStack, pot } = generatePreActions(heroPos, stacks, scenarioType, activePositions);
   
   // Deal hand
   const [card1, card2] = dealCards();
   const handNotation = handToNotation(card1, card2);
   
-  const playersLeft = randInt(stage.playersLeftRange[0], stage.playersLeftRange[1]);
   const paidPlaces = Math.max(3, Math.floor(playersLeft * 0.6));
   
   const scenario = {
@@ -141,6 +158,8 @@ function generateScenario() {
     shoverStack,
     pot,
     playersLeft,
+    tablePlayers,
+    activePositions,
     paidPlaces,
     icmPressure: stage.icm,
     availableActions: getAvailableActions(scenarioType, stackCat),
@@ -156,11 +175,18 @@ function generateScenario() {
   return scenario;
 }
 
-function pickScenarioType(heroPos, stackCat) {
-  if (heroPos === 'UTG') return 'rfi';
+function pickScenarioType(heroPos, stackCat, activePositions) {
+  const heroIdx = activePositions.indexOf(heroPos);
+  const isFirstToAct = heroIdx === 0;
+  const isLastToAct = heroPos === 'BB';
+  const playersBeforeHero = activePositions.slice(0, heroIdx);
+  const playersAfterHero = activePositions.slice(heroIdx + 1);
   
-  // BB can't open or be 3-bet (last to act preflop)
-  if (heroPos === 'BB') {
+  // First to act can only open
+  if (isFirstToAct) return 'rfi';
+  
+  // BB (last to act) can't open or be 3-bet
+  if (isLastToAct) {
     return Math.random() < 0.6 ? 'facingRaise' : 'facingAllin';
   }
   
@@ -171,14 +197,17 @@ function pickScenarioType(heroPos, stackCat) {
     return 'facingRaise';
   }
   
+  // Need players after hero for 3-bet scenario
+  const can3Bet = playersAfterHero.length > 0;
+  
   if (roll < 0.40) return 'rfi';
   if (roll < 0.70) return 'facingRaise';
-  if (roll < 0.85) return 'facing3Bet';
+  if (roll < 0.85 && can3Bet) return 'facing3Bet';
   return 'facingAllin';
 }
 
-function generatePreActions(heroPos, stacks, scenarioType) {
-  const posOrder = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
+  const posOrder = activePositions;
   const heroIdx = posOrder.indexOf(heroPos);
   const actionsBefore = [];
   let pot = 1.5;
@@ -237,7 +266,7 @@ function generatePreActions(heroPos, stacks, scenarioType) {
       if (possibleShovers.length === 0 && heroPos !== 'BB') {
         return generatePreActions(heroPos, stacks, 'rfi');
       }
-      const shoverCandidates = possibleShovers.length > 0 ? possibleShovers : posOrder.filter(p => p !== heroPos);
+      const shoverCandidates = possibleShovers.length > 0 ? possibleShovers : activePositions.filter(p => p !== heroPos);
       const shover = pick(shoverCandidates);
       shoverStack = stacks[shover];
       pot += shoverStack;
@@ -319,12 +348,20 @@ function renderScenario(scenario) {
     <span class="info-tag"><span class="label">階段</span><span class="value">${scenario.stage.label}</span></span>
     <span class="info-tag ${icmClass}"><span class="label">ICM</span><span class="value">${icmLabels[scenario.icmPressure]}</span></span>
     <span class="info-tag"><span class="label">剩餘</span><span class="value">${scenario.playersLeft}人</span></span>
+    <span class="info-tag"><span class="label">本桌</span><span class="value">${scenario.tablePlayers}人</span></span>
     <span class="info-tag"><span class="label">獎金</span><span class="value">${scenario.paidPlaces}名</span></span>
   `;
   
-  // Table seats
+  // Table seats — show/hide based on active positions
+  const activePos = scenario.activePositions;
   POSITIONS.forEach(pos => {
     const seatEl = document.getElementById(`seat-${pos.toLowerCase()}`);
+    const isActive = activePos.includes(pos);
+    
+    // Hide inactive seats
+    seatEl.style.display = isActive ? '' : 'none';
+    if (!isActive) return;
+    
     seatEl.classList.remove('is-hero');
     seatEl.querySelector('.seat-stack').textContent = `${scenario.stacks[pos]}BB`;
     const actionLabel = seatEl.querySelector('.seat-action-label');
