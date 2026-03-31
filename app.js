@@ -11,6 +11,11 @@ const state = {
   correctCount: 0,
   streak: 0,
   answered: false,
+  settings: {
+    stackMode: 'random',   // 'random' | 'custom'
+    customStack: 25,
+    positions: ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+  },
 };
 
 // ===== TOURNAMENT STAGE CONFIG =====
@@ -162,13 +167,21 @@ function generateScenario() {
   const tablePlayers = Math.min(6, playersLeft);
   const activePositions = getActivePositions(tablePlayers);
   
-  const heroPos = pick(activePositions);
+  // Filter hero positions by user settings
+  const allowedPositions = state.settings.positions;
+  const heroOptions = activePositions.filter(p => allowedPositions.includes(p));
+  const heroPos = heroOptions.length > 0 ? pick(heroOptions) : pick(activePositions);
   
   // Generate stacks only for active players
   const stacks = {};
   activePositions.forEach(pos => {
     stacks[pos] = randInt(stage.stackRange[0], stage.stackRange[1]);
   });
+  
+  // Apply custom stack for hero if set
+  if (state.settings.stackMode === 'custom') {
+    stacks[heroPos] = state.settings.customStack;
+  }
   const heroStack = stacks[heroPos];
   const stackCat = getStackCategory(heroStack);
   
@@ -820,6 +833,42 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Next hand
   document.getElementById('next-hand-btn').addEventListener('click', nextHand);
+  
+  // Settings toggle
+  document.getElementById('settings-toggle').addEventListener('click', () => {
+    const panel = document.getElementById('settings-panel');
+    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+  });
+  
+  // Stack mode radio
+  document.querySelectorAll('input[name="stack-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isCustom = radio.value === 'custom' && radio.checked;
+      document.getElementById('custom-stack').disabled = !isCustom;
+      state.settings.stackMode = document.querySelector('input[name="stack-mode"]:checked').value;
+    });
+  });
+  
+  // Custom stack input
+  document.getElementById('custom-stack').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    if (val >= 3 && val <= 200) {
+      state.settings.customStack = val;
+    }
+  });
+  
+  // Position checkboxes
+  document.querySelectorAll('.pos-cb input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = [...document.querySelectorAll('.pos-cb input[type="checkbox"]:checked')];
+      // Prevent unchecking all
+      if (checked.length === 0) {
+        cb.checked = true;
+        return;
+      }
+      state.settings.positions = checked.map(c => c.value);
+    });
+  });
   
   // History toggle
   document.getElementById('history-toggle').addEventListener('click', toggleHistory);

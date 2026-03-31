@@ -25,10 +25,36 @@
         <span class="stat-item" title="已訓練">🃏 <strong id="total-hands">0</strong></span>
         <span class="stat-item" title="連續正確">🔥 <strong id="streak">0</strong></span>
       </div>
+      <button class="history-toggle-btn" id="settings-toggle" aria-label="設定">
+        ⚙️
+      </button>
       <button class="history-toggle-btn" id="history-toggle" aria-label="歷史紀錄">
         📋 <span class="history-badge" id="history-badge" style="display:none">0</span>
       </button>
     </header>
+
+    <!-- Settings panel -->
+    <div class="settings-panel" id="settings-panel" style="display:none">
+      <div class="settings-row">
+        <label class="settings-label">💰 籌碼量 (BB)</label>
+        <div class="settings-control">
+          <label class="radio-label"><input type="radio" name="stack-mode" value="random" checked> 隨機</label>
+          <label class="radio-label"><input type="radio" name="stack-mode" value="custom"> 自訂</label>
+          <input type="number" id="custom-stack" class="stack-input" min="3" max="200" value="25" disabled placeholder="BB">
+        </div>
+      </div>
+      <div class="settings-row">
+        <label class="settings-label">📍 訓練位置</label>
+        <div class="settings-control pos-checkboxes">
+          <label class="pos-cb"><input type="checkbox" value="UTG" checked> UTG</label>
+          <label class="pos-cb"><input type="checkbox" value="HJ" checked> HJ</label>
+          <label class="pos-cb"><input type="checkbox" value="CO" checked> CO</label>
+          <label class="pos-cb"><input type="checkbox" value="BTN" checked> BTN</label>
+          <label class="pos-cb"><input type="checkbox" value="SB" checked> SB</label>
+          <label class="pos-cb"><input type="checkbox" value="BB" checked> BB</label>
+        </div>
+      </div>
+    </div>
 
     <main>
       <div class="game-area">
