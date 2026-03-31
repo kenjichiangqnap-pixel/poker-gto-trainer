@@ -597,6 +597,30 @@ header {
   border-radius: 8px;
   line-height: 1.5;
 }
+.modal-tournament-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-tag {
+  display: inline-block;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.modal-tag strong {
+  color: var(--text);
+}
+.modal-scenario-desc {
+  margin-top: 4px;
+}
 
 /* ========== Range Chart ========== */
 .range-chart-wrapper {

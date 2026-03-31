@@ -650,11 +650,24 @@ function showRangeChart(scenario, highlightHand) {
   
   modalTitle.textContent = `GTO 範圍表 — ${scenario.heroPosition}`;
   
+  // Build full context: tournament info + scenario description
+  const icmLabels = {low:'低',medium:'中',high:'高',extreme:'極高'};
+  const s = scenario;
+  let tournamentInfo = `<div class="modal-tournament-info">`;
+  tournamentInfo += `<span class="modal-tag">📍 ${s.stage.label}</span>`;
+  tournamentInfo += `<span class="modal-tag">ICM: <strong>${icmLabels[s.icmPressure]}</strong></span>`;
+  tournamentInfo += `<span class="modal-tag">剩餘: <strong>${s.playersLeft}人</strong></span>`;
+  tournamentInfo += `<span class="modal-tag">本桌: <strong>${s.tablePlayers}人</strong></span>`;
+  tournamentInfo += `<span class="modal-tag">獎金: <strong>${s.paidPlaces}名</strong></span>`;
+  tournamentInfo += `<span class="modal-tag">位置: <strong>${s.heroPosition}</strong></span>`;
+  tournamentInfo += `<span class="modal-tag">籌碼: <strong>${s.heroStack}BB</strong></span>`;
+  tournamentInfo += `</div>`;
+  
   let scenarioDesc = getScenarioDescription(scenario);
   if (highlightHand) {
     scenarioDesc += `<br>🃏 你的手牌: <strong>${highlightHand}</strong> → ${getActionLabel(scenario.correctAction || getCorrectAction(highlightHand, scenario))}`;
   }
-  modalScenario.innerHTML = scenarioDesc;
+  modalScenario.innerHTML = tournamentInfo + `<div class="modal-scenario-desc">${scenarioDesc}</div>`;
   
   const grid = getRangeChart(scenario);
   const highlightGrid = highlightHand ? handToGrid(highlightHand) : null;
