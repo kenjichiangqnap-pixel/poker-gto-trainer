@@ -794,10 +794,21 @@ function showPreviousHandRange() {
 
 // ===== NEXT HAND =====
 function nextHand() {
-  state.currentScenario = generateScenario();
-  renderScenario(state.currentScenario);
-  // Scroll to top on mobile
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  try {
+    state.currentScenario = generateScenario();
+    renderScenario(state.currentScenario);
+    // Scroll to top on mobile
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    console.error('nextHand error:', e);
+    // Retry once on error
+    try {
+      state.currentScenario = generateScenario();
+      renderScenario(state.currentScenario);
+    } catch (e2) {
+      console.error('nextHand retry failed:', e2);
+    }
+  }
 }
 
 // ===== EVENT LISTENERS =====
@@ -860,7 +871,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Register service worker (for PWA offline support)
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // Force check for updates
+      reg.update().catch(() => {});
+    }).catch(() => {});
   }
   
   // Start first hand
