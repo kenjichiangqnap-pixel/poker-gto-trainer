@@ -634,6 +634,30 @@ header {
   gap: 1.5px;
   min-width: 380px;
 }
+
+/* Inline range chart in result box */
+.inline-range-wrapper {
+  margin-top: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.inline-range-chart {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 1px;
+  min-width: 320px;
+  max-width: 100%;
+}
+.inline-range-chart .range-cell {
+  min-width: 22px;
+  min-height: 22px;
+  font-size: 0.48rem;
+  border-radius: 2px;
+}
+.inline-range-wrapper .range-legend {
+  margin-top: 8px;
+  font-size: 0.7rem;
+}
 .range-cell {
   aspect-ratio: 1;
   display: flex;

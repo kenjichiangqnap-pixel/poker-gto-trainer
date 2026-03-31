@@ -473,12 +473,10 @@ function renderScenario(scenario) {
   // Action buttons with sizing
   renderActionButtons(scenario);
   
-  // Hide result and next button
+  // Hide result and next button, show action buttons
   document.getElementById('result-box').style.display = 'none';
   document.getElementById('next-hand-btn').style.display = 'none';
-  
-  // Enable/disable prev hand button
-  document.getElementById('prev-hand-btn').disabled = state.history.length === 0;
+  document.getElementById('actions').style.display = '';
 }
 
 function renderCards(cards) {
@@ -573,7 +571,6 @@ function handleAction(action) {
   
   // Show next button
   document.getElementById('next-hand-btn').style.display = '';
-  document.getElementById('prev-hand-btn').disabled = false;
   
   // Update history badge
   updateHistoryBadge();
@@ -583,17 +580,21 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
   const resultBox = document.getElementById('result-box');
   resultBox.style.display = '';
   
+  // Hide action buttons
+  document.getElementById('actions').style.display = 'none';
+  
   const explanation = getExplanation(scenario, scenario.handNotation, correctAction, playerAction);
   
+  let resultHTML = '';
   if (isCorrect) {
     resultBox.className = 'result-box correct';
-    resultBox.innerHTML = `
+    resultHTML = `
       <div class="result-title">✅ 正確！</div>
       <div class="result-detail">${explanation}</div>
     `;
   } else {
     resultBox.className = 'result-box incorrect';
-    resultBox.innerHTML = `
+    resultHTML = `
       <div class="result-title">❌ 錯誤</div>
       <div class="result-detail">
         你選了 <strong>${getActionLabel(playerAction)}</strong>，最佳選擇是 <strong>${getActionLabel(correctAction)}</strong><br>
@@ -602,8 +603,39 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
     `;
   }
   
+  // Inline range chart
+  resultHTML += buildInlineRangeChart(scenario, scenario.handNotation);
+  resultBox.innerHTML = resultHTML;
+  
   // Scroll result into view on mobile
   setTimeout(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+}
+
+function buildInlineRangeChart(scenario, highlightHand) {
+  const grid = getRangeChart(scenario);
+  const highlightGrid = highlightHand ? handToGrid(highlightHand) : null;
+  
+  let html = '<div class="inline-range-wrapper">';
+  html += '<div class="inline-range-chart">';
+  for (let r = 0; r < 13; r++) {
+    for (let c = 0; c < 13; c++) {
+      const cell = grid[r][c];
+      let cls = `range-cell action-${cell.action}`;
+      if (highlightGrid && highlightGrid.row === r && highlightGrid.col === c) {
+        cls += ' is-hero-hand';
+      }
+      html += `<div class="${cls}" title="${cell.hand}: ${getActionLabel(cell.action)}">${cell.hand}</div>`;
+    }
+  }
+  html += '</div>';
+  html += `<div class="range-legend">
+    <span class="legend-item"><span class="legend-color raise"></span>加注</span>
+    <span class="legend-item"><span class="legend-color call"></span>跟注</span>
+    <span class="legend-item"><span class="legend-color allin"></span>全押</span>
+    <span class="legend-item"><span class="legend-color fold"></span>棄牌</span>
+  </div>`;
+  html += '</div>';
+  return html;
 }
 
 function updateStats() {
@@ -780,9 +812,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Next hand
   document.getElementById('next-hand-btn').addEventListener('click', nextHand);
-  
-  // Previous hand range
-  document.getElementById('prev-hand-btn').addEventListener('click', showPreviousHandRange);
   
   // History toggle
   document.getElementById('history-toggle').addEventListener('click', toggleHistory);
