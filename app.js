@@ -224,7 +224,7 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
     case 'facingRaise': {
       const possibleOpeners = posOrder.slice(0, heroIdx);
       if (possibleOpeners.length === 0) {
-        return generatePreActions(heroPos, stacks, 'rfi');
+        return generatePreActions(heroPos, stacks, 'rfi', activePositions);
       }
       openerPosition = pick(possibleOpeners);
       const raiseSize = Math.round(randFloat(2.0, 2.5) * 10) / 10;
@@ -243,7 +243,7 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
       openerPosition = heroPos;
       const possibleThreeBettors = posOrder.slice(heroIdx + 1);
       if (possibleThreeBettors.length === 0) {
-        return generatePreActions(heroPos, stacks, 'rfi');
+        return generatePreActions(heroPos, stacks, 'rfi', activePositions);
       }
       const threeBettor = pick(possibleThreeBettors);
       const openSize = Math.round(randFloat(2.0, 2.5) * 10) / 10;
@@ -264,7 +264,7 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
     case 'facingAllin': {
       const possibleShovers = posOrder.slice(0, heroIdx);
       if (possibleShovers.length === 0 && heroPos !== 'BB') {
-        return generatePreActions(heroPos, stacks, 'rfi');
+        return generatePreActions(heroPos, stacks, 'rfi', activePositions);
       }
       const shoverCandidates = possibleShovers.length > 0 ? possibleShovers : activePositions.filter(p => p !== heroPos);
       const shover = pick(shoverCandidates);
@@ -294,7 +294,13 @@ function getScenarioDescription(scenario) {
   
   switch (s.type) {
     case 'rfi': {
-      desc = `前面全部蓋牌到你。`;
+      const heroIdx = s.activePositions.indexOf(s.heroPosition);
+      if (heroIdx === 0) {
+        desc = `你是第一個行動的玩家。`;
+      } else {
+        const foldCount = s.actionsBefore.filter(a => a.action === 'fold').length;
+        desc = foldCount > 0 ? `前面 ${foldCount} 人蓋牌到你。` : `前面全部蓋牌到你。`;
+      }
       desc += `<br>你在 <strong>${s.heroPosition}</strong> 位，籌碼 <strong>${s.heroStack} BB</strong>`;
       const cat = getStackCategory(s.heroStack);
       if (cat === 'veryShort' || cat === 'desperate') {
