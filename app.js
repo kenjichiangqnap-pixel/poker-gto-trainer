@@ -39,6 +39,46 @@ function dealCards() {
   return [c1, c2];
 }
 
+// Deal a hand constrained to a specific range (top N hands from HAND_RANKINGS)
+// Used when hero has already acted (e.g., facing3Bet — hero already opened)
+function dealConstrainedHand(topN) {
+  // Pick a random hand notation from the top N
+  const handNotation = HAND_RANKINGS[randInt(0, topN - 1)];
+  const r1 = handNotation[0];
+  const r2 = handNotation[1];
+  const suffix = handNotation.length > 2 ? handNotation[2] : null;
+  
+  let suit1, suit2;
+  if (!suffix) {
+    // Pocket pair — pick two different suits
+    const suits = [...SUITS];
+    suit1 = pick(suits);
+    suit2 = pick(suits.filter(s => s !== suit1));
+  } else if (suffix === 's') {
+    // Suited — same suit
+    suit1 = pick(SUITS);
+    suit2 = suit1;
+  } else {
+    // Offsuit — different suits
+    suit1 = pick(SUITS);
+    suit2 = pick(SUITS.filter(s => s !== suit1));
+  }
+  
+  return [
+    { rank: r1, suit: suit1 },
+    { rank: r2, suit: suit2 }
+  ];
+}
+
+// Get the RFI range size (top N hands) for a position & stack
+function getRFIRangeSize(pos, stackCat, icmPressure) {
+  const base = RFI_BASE[pos]?.[stackCat];
+  if (!base) return 0;
+  const icmMult = getICMMultiplier(icmPressure);
+  const threshold = base.allin !== undefined ? base.allin : (base.raise || 0);
+  return Math.round(threshold * icmMult);
+}
+
 function formatCard(card) {
   return card.rank + SUIT_SYMBOLS[card.suit];
 }
@@ -138,9 +178,19 @@ function generateScenario() {
   // Generate pre-actions
   const { actionsBefore, openerPosition, shoverStack, pot } = generatePreActions(heroPos, stacks, scenarioType, activePositions);
   
-  // Deal hand
-  const [card1, card2] = dealCards();
-  const handNotation = handToNotation(card1, card2);
+  // Deal hand — constrain to hero's opening range for facing3Bet
+  let card1, card2, handNotation;
+  if (scenarioType === 'facing3Bet') {
+    const rangeSize = getRFIRangeSize(heroPos, stackCat, stage.icm);
+    if (rangeSize > 0) {
+      [card1, card2] = dealConstrainedHand(rangeSize);
+    } else {
+      [card1, card2] = dealCards();
+    }
+  } else {
+    [card1, card2] = dealCards();
+  }
+  handNotation = handToNotation(card1, card2);
   
   const paidPlaces = Math.max(3, Math.floor(playersLeft * 0.6));
   
