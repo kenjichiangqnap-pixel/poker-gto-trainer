@@ -17,6 +17,8 @@
   --purple: #8957e5;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 body {
@@ -35,7 +37,8 @@ body {
 .app {
   max-width: 680px;
   margin: 0 auto;
-  padding: 0 12px;
+  padding: 0 max(16px, var(--safe-left));
+  padding-right: max(16px, var(--safe-right));
   padding-top: max(8px, var(--safe-top));
   padding-bottom: max(12px, var(--safe-bottom));
   min-height: 100vh;
@@ -138,12 +141,15 @@ header {
 .table-container {
   display: flex;
   justify-content: center;
+  padding: 28px 56px;
+  overflow: visible;
 }
 .poker-table {
   position: relative;
   width: 100%;
   max-width: 480px;
   aspect-ratio: 1.7 / 1;
+  overflow: visible;
   background: radial-gradient(ellipse at center, #1e6b3a 0%, #145228 60%, #0f3d1e 100%);
   border-radius: 50% / 45%;
   border: 5px solid #8b6914;
@@ -215,12 +221,12 @@ header {
 }
 
 /* Seat positions around the table */
-#seat-sb  { top: -22px;  left: 15%; }
-#seat-bb  { top: -22px;  right: 15%; }
-#seat-utg { top: 50%;    right: -48px; transform: translateY(-50%); }
-#seat-hj  { bottom: -22px; right: 15%; }
-#seat-co  { bottom: -22px; left: 15%; }
-#seat-btn { top: 50%;     left: -48px; transform: translateY(-50%); }
+#seat-sb  { top: -24px;  left: 18%; }
+#seat-bb  { top: -24px;  right: 18%; }
+#seat-utg { top: 50%;    right: -52px; transform: translateY(-50%); }
+#seat-hj  { bottom: -24px; right: 18%; }
+#seat-co  { bottom: -24px; left: 18%; }
+#seat-btn { top: 50%;     left: -52px; transform: translateY(-50%); }
 
 /* ========== Position Indicator ========== */
 .position-indicator {
@@ -655,6 +661,7 @@ header {
 /* ========== Desktop enhancements (tablets+) ========== */
 @media (min-width: 768px) {
   .app { padding: 0 24px; padding-top: 12px; }
+  .table-container { padding: 28px 60px; }
   .header-title { font-size: 1.15rem; }
   .stats { font-size: 0.88rem; }
   .tournament-info { font-size: 0.85rem; padding: 10px 16px; }
@@ -680,8 +687,9 @@ header {
   .card .card-suit { font-size: 1rem; }
   .action-btn { padding: 12px 6px; min-width: 60px; }
   .btn-label { font-size: 0.85rem; }
-  #seat-utg { right: -38px; }
-  #seat-btn { left: -38px; }
+  .table-container { padding: 24px 44px; }
+  #seat-utg { right: -44px; }
+  #seat-btn { left: -44px; }
 }
 
 /* ========== Landscape on phone ========== */
