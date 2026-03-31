@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GTO訓練器">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <title>撲克錦標賽 GTO 翻前訓練器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Top stats bar -->
+    <header>
+      <div class="header-left">
+        <div class="header-title">🏆 GTO訓練器</div>
+      </div>
+      <div class="stats">
+        <span class="stat-item" title="正確率">✅ <strong id="accuracy">0%</strong></span>
+        <span class="stat-item" title="已訓練">🃏 <strong id="total-hands">0</strong></span>
+        <span class="stat-item" title="連續正確">🔥 <strong id="streak">0</strong></span>
+      </div>
+      <button class="history-toggle-btn" id="history-toggle" aria-label="歷史紀錄">
+        📋 <span class="history-badge" id="history-badge" style="display:none">0</span>
+      </button>
+    </header>
+
+    <main>
+      <div class="game-area">
+        <!-- Tournament info bar -->
+        <div class="tournament-info" id="tournament-info"></div>
+
+        <!-- Poker table -->
+        <div class="table-container">
+          <div class="poker-table" id="poker-table">
+            <div class="seat" id="seat-sb" data-pos="SB">
+              <div class="seat-position">SB</div>
+              <div class="seat-stack"></div>
+              <div class="seat-action-label"></div>
+            </div>
+            <div class="seat" id="seat-bb" data-pos="BB">
+              <div class="seat-position">BB</div>
+              <div class="seat-stack"></div>
+              <div class="seat-action-label"></div>
+            </div>
+            <div class="seat" id="seat-utg" data-pos="UTG">
+              <div class="seat-position">UTG</div>
+              <div class="seat-stack"></div>
+              <div class="seat-action-label"></div>
+            </div>
+            <div class="seat" id="seat-hj" data-pos="HJ">
+              <div class="seat-position">HJ</div>
+              <div class="seat-stack"></div>
+              <div class="seat-action-label"></div>
+            </div>
+            <div class="seat" id="seat-co" data-pos="CO">
+              <div class="seat-position">CO</div>
+              <div class="seat-stack"></div>
+              <div class="seat-action-label"></div>
+            </div>
+            <div class="seat" id="seat-btn" data-pos="BTN">
+              <div class="seat-position">BTN</div>
+              <div class="seat-stack"></div>
+              <div class="seat-action-label"></div>
+            </div>
+            <div class="table-center">
+              <div class="pot-display" id="pot-display">底池: 1.5 BB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Position indicator (bottom-left, always visible) -->
+        <div class="position-indicator" id="position-indicator">
+          你的位置: <strong>CO</strong>
+        </div>
+
+        <!-- Scenario description -->
+        <div class="scenario-box" id="scenario-box"></div>
+
+        <!-- Your hand -->
+        <div class="hand-area">
+          <div class="hand-label">你的手牌</div>
+          <div class="hand-display" id="hand-display">
+            <div class="card" id="card1"></div>
+            <div class="card" id="card2"></div>
+          </div>
+          <div class="hand-notation" id="hand-notation"></div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="actions" id="actions">
+          <button class="action-btn fold-btn" data-action="fold">
+            <span class="btn-label">棄牌</span>
+          </button>
+          <button class="action-btn call-btn" data-action="call">
+            <span class="btn-label">跟注</span>
+            <span class="btn-amount" id="call-amount"></span>
+          </button>
+          <button class="action-btn raise-btn" data-action="raise">
+            <span class="btn-label">加注</span>
+            <span class="btn-amount" id="raise-amount"></span>
+          </button>
+          <button class="action-btn allin-btn" data-action="allin">
+            <span class="btn-label">ALL IN</span>
+            <span class="btn-amount" id="allin-amount"></span>
+          </button>
+        </div>
+
+        <!-- Result display -->
+        <div class="result-box" id="result-box" style="display:none"></div>
+
+        <!-- Control buttons -->
+        <div class="controls">
+          <button class="ctrl-btn" id="prev-hand-btn" disabled>
+            📊 查看範圍表
+          </button>
+          <button class="ctrl-btn primary" id="next-hand-btn" style="display:none">
+            下一手 →
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- History drawer (slide from right) -->
+  <div class="history-overlay" id="history-overlay" style="display:none">
+    <div class="history-drawer" id="history-drawer">
+      <div class="drawer-header">
+        <h2>📋 歷史紀錄</h2>
+        <button class="drawer-close" id="history-close">&times;</button>
+      </div>
+      <div class="history-stats" id="history-stats"></div>
+      <div class="history-list" id="history-list">
+        <div class="history-empty">尚無紀錄，開始訓練吧！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Range chart modal -->
+  <div class="modal-overlay" id="range-modal" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">GTO 範圍表</h2>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-scenario" id="modal-scenario"></div>
+      <div class="range-chart-wrapper">
+        <div class="range-chart" id="range-chart"></div>
+      </div>
+      <div class="range-legend">
+        <span class="legend-item"><span class="legend-color raise"></span>加注</span>
+        <span class="legend-item"><span class="legend-color call"></span>跟注</span>
+        <span class="legend-item"><span class="legend-color allin"></span>全押</span>
+        <span class="legend-item"><span class="legend-color threebet"></span>3-Bet</span>
+        <span class="legend-item"><span class="legend-color fold"></span>棄牌</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="ranges.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
