@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gto-trainer-v5';
+const CACHE_NAME = 'gto-trainer-v6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -28,9 +28,16 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: cache-first strategy (fully offline app)
+// Fetch: network-first (always try fresh, fallback to cache for offline)
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(event.request)
+      .then(response => {
+        // Update cache with fresh response
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
