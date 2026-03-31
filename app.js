@@ -473,10 +473,9 @@ function renderScenario(scenario) {
   // Action buttons with sizing
   renderActionButtons(scenario);
   
-  // Hide result and next button, show action buttons
+  // Hide result, show action buttons, hide next-hand button
   document.getElementById('result-box').style.display = 'none';
   document.getElementById('next-hand-btn').style.display = 'none';
-  document.getElementById('actions').style.display = '';
 }
 
 function renderCards(cards) {
@@ -567,10 +566,7 @@ function handleAction(action) {
   renderHistory();
   
   // Disable action buttons
-  document.querySelectorAll('.action-btn').forEach(btn => btn.disabled = true);
-  
-  // Show next button
-  document.getElementById('next-hand-btn').style.display = '';
+  document.querySelectorAll('.action-btn[data-action]').forEach(btn => btn.disabled = true);
   
   // Update history badge
   updateHistoryBadge();
@@ -580,8 +576,9 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
   const resultBox = document.getElementById('result-box');
   resultBox.style.display = '';
   
-  // Hide action buttons
-  document.getElementById('actions').style.display = 'none';
+  // Hide action buttons, show next-hand button in same position
+  document.querySelectorAll('.action-btn[data-action]').forEach(btn => btn.style.display = 'none');
+  document.getElementById('next-hand-btn').style.display = '';
   
   const explanation = getExplanation(scenario, scenario.handNotation, correctAction, playerAction);
   
