@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gto-trainer-v11';
+const CACHE_NAME = 'gto-trainer-v12';
 const ASSETS = [
   '/',
   '/index.html',
