@@ -273,14 +273,19 @@ function pickScenarioType(heroPos, stackCat, activePositions) {
     return allowedPick(['facingRaise']);
   }
 
-  const can3Bet = playersAfterHero.length > 0 && allowed.includes('facing3Bet');
+  // facing3Bet: hero must be CO/BTN/SB (opener ≥ CO so a realistic 3-bettor exists after)
+  const can3Bet = playersAfterHero.length > 0 && allowed.includes('facing3Bet')
+                  && !['UTG', 'MP'].includes(heroPos);
+  // facingRaise: opener must be at least MP (UTG excluded), so hero must be CO or later
+  const validOpeners = activePositions.slice(0, heroIdx).filter(p => p !== 'UTG');
+  const canFaceRaise = validOpeners.length > 0 && allowed.includes('facingRaise');
 
   // Weighted random within allowed types
   const pool = [];
-  if (allowed.includes('rfi'))         pool.push('rfi','rfi','rfi','rfi');         // 40%
-  if (allowed.includes('facingRaise')) pool.push('facingRaise','facingRaise','facingRaise'); // 30%
-  if (can3Bet)                         pool.push('facing3Bet','facing3Bet');        // 20%
-  if (allowed.includes('facingAllin')) pool.push('facingAllin');                    // 10%
+  if (allowed.includes('rfi'))  pool.push('rfi','rfi','rfi','rfi');         // 40%
+  if (canFaceRaise)             pool.push('facingRaise','facingRaise','facingRaise'); // 30%
+  if (can3Bet)                  pool.push('facing3Bet','facing3Bet');        // 20%
+  if (allowed.includes('facingAllin')) pool.push('facingAllin');             // 10%
   if (pool.length === 0) return 'rfi';
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -301,7 +306,8 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
       break;
     }
     case 'facingRaise': {
-      const possibleOpeners = posOrder.slice(0, heroIdx);
+      // Opener must be at least MP (UTG opens are excluded for realism)
+      const possibleOpeners = posOrder.slice(0, heroIdx).filter(p => p !== 'UTG');
       if (possibleOpeners.length === 0) {
         return generatePreActions(heroPos, stacks, 'rfi', activePositions);
       }
