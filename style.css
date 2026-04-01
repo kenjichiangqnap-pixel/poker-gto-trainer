@@ -740,6 +740,25 @@ header {
   gap: 8px;
   margin-top: 6px;
 }
+.opp-cards-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.opp-cards-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.result-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
 .opp-card {
   background: #fff;
   color: #1a1a2e;

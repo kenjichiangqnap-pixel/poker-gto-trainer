@@ -386,7 +386,10 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
       }
       const shoverCandidates = possibleShovers.length > 0 ? possibleShovers : activePositions.filter(p => p !== heroPos);
       const shover = pick(shoverCandidates);
-      shoverStack = stacks[shover];
+      // Constrain shover to a realistic push range: 8-27 BB
+      // ~60% chance 8-15 (classic push territory), ~40% 16-27 (AKo/big pairs shove)
+      shoverStack = Math.random() < 0.6 ? randInt(8, 15) : randInt(16, 27);
+      stacks[shover] = shoverStack; // update stacks so calling math is consistent
       pot += shoverStack;
       
       for (let i = 0; i < heroIdx; i++) {
@@ -650,17 +653,26 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
   
   const explanation = getExplanation(scenario, scenario.handNotation, correctAction, playerAction);
   
+  // Opponent cards inline (facingAllin only)
+  const oppCardsHTML = buildOpponentCardsInline(scenario);
+
   let resultHTML = '';
   if (isCorrect) {
     resultBox.className = 'result-box correct';
     resultHTML = `
-      <div class="result-title">✅ 正確！</div>
+      <div class="result-title-row">
+        <div class="result-title">✅ 正確！</div>
+        ${oppCardsHTML}
+      </div>
       <div class="result-detail">${explanation}</div>
     `;
   } else {
     resultBox.className = 'result-box incorrect';
     resultHTML = `
-      <div class="result-title">❌ 錯誤</div>
+      <div class="result-title-row">
+        <div class="result-title">❌ 錯誤</div>
+        ${oppCardsHTML}
+      </div>
       <div class="result-detail">
         你選了 <strong>${getActionLabel(playerAction)}</strong>，最佳選擇是 <strong>${getActionLabel(correctAction)}</strong><br>
         ${explanation}
@@ -679,6 +691,21 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
     const btn = document.getElementById('next-hand-btn');
     if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 100);
+}
+
+function buildOpponentCardsInline(scenario) {
+  if (scenario.type !== 'facingAllin' || !scenario.opponentCards) return '';
+  const [oc1, oc2] = scenario.opponentCards;
+  const redSuits = ['h', 'd'];
+  const c1cls = redSuits.includes(oc1.suit) ? 'opp-card red' : 'opp-card';
+  const c2cls = redSuits.includes(oc2.suit) ? 'opp-card red' : 'opp-card';
+  const oppPos = scenario.actionsBefore && scenario.actionsBefore.find(a => a.action === 'allin')?.position || '';
+  const oppStack = scenario.shoverStack || 0;
+  return `<div class="opp-cards-inline">
+    <span class="opp-cards-label">對手 (${oppPos} ${oppStack}BB)</span>
+    <span class="${c1cls}">${formatCard(oc1)}</span>
+    <span class="${c2cls}">${formatCard(oc2)}</span>
+  </div>`;
 }
 
 function buildOpponentRangeHTML(scenario) {
@@ -713,25 +740,8 @@ function buildOpponentRangeHTML(scenario) {
       };
       break;
     }
-    case 'facingAllin': {
-      const aa = scenario.actionsBefore && scenario.actionsBefore.find(a => a.action === 'allin');
-      if (!aa) return '';
-      const oppPos = aa.position;
-      const oppStack = scenario.shoverStack || (scenario.stacks && scenario.stacks[oppPos]) || 10;
-      if (!scenario.opponentCards) return '';
-      const [oc1, oc2] = scenario.opponentCards;
-      const redSuits = ['h', 'd'];
-      const c1Class = redSuits.includes(oc1.suit) ? 'opp-card red' : 'opp-card';
-      const c2Class = redSuits.includes(oc2.suit) ? 'opp-card red' : 'opp-card';
-      return `<div class="opp-range-section">
-        <div class="opp-range-title">對手推牌手牌</div>
-        <div class="opp-range-subtitle">對手 (${oppPos}) ${oppStack} BB 全押</div>
-        <div class="opp-cards-display">
-          <span class="${c1Class}">${formatCard(oc1)}</span>
-          <span class="${c2Class}">${formatCard(oc2)}</span>
-        </div>
-      </div>`;
-    }
+    case 'facingAllin':
+      return ''; // cards shown inline next to result title
     default:
       return ''; // rfi: hero is first aggressor, no opponent range
   }
