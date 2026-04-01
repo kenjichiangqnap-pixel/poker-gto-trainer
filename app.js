@@ -96,6 +96,93 @@ function formatBB(amount) {
   return amount.toFixed(1) + ' BB';
 }
 
+// ===== CHIP STACK RENDERING =====
+// Approximate pixel positions (as % of table width/height) where chips
+// sit between each seat and the center of the table.
+const CHIP_POS = {
+  SB:  { left: '32%', top: '28%' },
+  BB:  { left: '68%', top: '28%' },
+  UTG: { left: '71%', top: '48%' },
+  MP:  { left: '68%', top: '72%' },
+  CO:  { left: '32%', top: '72%' },
+  BTN: { left: '29%', top: '48%' },
+};
+
+// Convert BB amount to chip count (1–8 chips)
+function chipCount(amount) {
+  if (amount <= 2)   return 1;
+  if (amount <= 3.5) return 2;
+  if (amount <= 6)   return 3;
+  if (amount <= 10)  return 4;
+  if (amount <= 16)  return 5;
+  if (amount <= 28)  return 6;
+  if (amount <= 45)  return 7;
+  return 8;
+}
+
+// Build a single chip column HTML
+function chipCol(n, color) {
+  return `<div class="chip-col">${'<div class="chip c-' + color + '"></div>'.repeat(n)}</div>`;
+}
+
+// Render a chip pile on the table
+// stacks: array of { n, color } for each side-by-side column
+// label: text shown below
+function makePile(pos, stacks, label) {
+  const offset = CHIP_POS[pos];
+  if (!offset) return;
+  const area = document.getElementById('chip-area');
+  const pile = document.createElement('div');
+  pile.className = 'chip-pile';
+  pile.style.left = offset.left;
+  pile.style.top  = offset.top;
+  pile.innerHTML = stacks.map(s => chipCol(s.n, s.color)).join('') +
+    `<div class="chip-pile-label">${label}</div>`;
+  area.appendChild(pile);
+}
+
+function renderChipsOnTable(scenario) {
+  document.getElementById('chip-area').innerHTML = '';
+
+  switch (scenario.type) {
+    case 'facingRaise': {
+      const ra = scenario.actionsBefore.find(a => a.action === 'raise');
+      if (!ra) return;
+      const n = chipCount(ra.amount);
+      // 兩塊籌碼：兩疊高度略有差異
+      makePile(ra.position, [{ n, color: 'green' }, { n: Math.max(1, n - 1), color: 'green' }],
+               formatBB(ra.amount));
+      break;
+    }
+    case 'facing3Bet': {
+      // 英雄的開牌籌碼（兩塊）
+      const heroOpen = scenario.actionsBefore.find(a => a.isHero);
+      if (heroOpen) {
+        const n = chipCount(heroOpen.amount);
+        makePile(scenario.heroPosition,
+                 [{ n, color: 'green' }, { n: Math.max(1, n - 1), color: 'green' }],
+                 formatBB(heroOpen.amount));
+      }
+      // 3-bet 者的籌碼（小疊，紫色）
+      const tb = scenario.actionsBefore.find(a => a.action === '3bet');
+      if (tb) {
+        const n = chipCount(tb.amount);
+        makePile(tb.position, [{ n, color: 'purple' }], `3B ${formatBB(tb.amount)}`);
+      }
+      break;
+    }
+    case 'facingAllin': {
+      const aa = scenario.actionsBefore.find(a => a.action === 'allin');
+      if (!aa) return;
+      const amt = scenario.stacks[aa.position] || aa.amount || 10;
+      const n = chipCount(amt);
+      makePile(aa.position, [{ n, color: 'orange' }], 'ALL IN');
+      break;
+    }
+    // rfi: no chips yet
+  }
+}
+
 // ===== SIZING CALCULATIONS =====
 function getOpenRaiseSize(heroStack) {
   if (heroStack >= 25) return randFloat(2.0, 2.5);
@@ -469,6 +556,9 @@ function renderScenario(scenario) {
   
   // Pot
   document.getElementById('pot-display').textContent = `底池: ${formatBB(scenario.pot)}`;
+
+  // Chip stacks on table
+  renderChipsOnTable(scenario);
   
   // Position indicator
   document.getElementById('position-indicator').innerHTML = 
