@@ -97,68 +97,6 @@ function formatBB(amount) {
   return amount.toFixed(1) + ' BB';
 }
 
-// ===== CHIP STACK RENDERING =====
-// Chip positions: just inside the table edge, near each seat.
-// Table is an ellipse; x/y as % of .poker-table width/height.
-const CHIP_POS = {
-  SB:  { left: '26%', top: '14%' },
-  BB:  { left: '70%', top: '14%' },
-  UTG: { left: '82%', top: '48%' },
-  MP:  { left: '70%', top: '82%' },
-  CO:  { left: '26%', top: '82%' },
-  BTN: { left: '15%', top: '48%' },
-};
-
-// Return 1 chip for small bets, 2 for larger
-function chipCount(amount) {
-  return amount > 4 ? 2 : 1;
-}
-
-// Build a single chip column HTML (n chips stacked)
-function chipCol(n, color) {
-  return `<div class="chip-col">${'<div class="chip c-' + color + '"></div>'.repeat(n)}</div>`;
-}
-
-// Render chip pile near a seat — NO label text
-function makePile(pos, stacks) {
-  const offset = CHIP_POS[pos];
-  if (!offset) return;
-  const area = document.getElementById('chip-area');
-  const pile = document.createElement('div');
-  pile.className = 'chip-pile';
-  pile.style.left = offset.left;
-  pile.style.top  = offset.top;
-  pile.innerHTML =
-    `<div class="chip-pile-cols">${stacks.map(s => chipCol(s.n, s.color)).join('')}</div>`;
-  area.appendChild(pile);
-}
-
-function renderChipsOnTable(scenario) {
-  document.getElementById('chip-area').innerHTML = '';
-
-  switch (scenario.type) {
-    case 'facingRaise': {
-      const ra = scenario.actionsBefore.find(a => a.action === 'raise');
-      if (!ra) return;
-      makePile(ra.position, [{ n: chipCount(ra.amount), color: 'green' }]);
-      break;
-    }
-    case 'facing3Bet': {
-      const heroOpen = scenario.actionsBefore.find(a => a.isHero);
-      if (heroOpen) makePile(scenario.heroPosition, [{ n: 2, color: 'green' }]);
-      const tb = scenario.actionsBefore.find(a => a.action === '3bet');
-      if (tb) makePile(tb.position, [{ n: 2, color: 'purple' }]);
-      break;
-    }
-    case 'facingAllin': {
-      const aa = scenario.actionsBefore.find(a => a.action === 'allin');
-      if (!aa) return;
-      makePile(aa.position, [{ n: 2, color: 'orange' }]);
-      break;
-    }
-  }
-}
-
 // ===== SIZING CALCULATIONS =====
 function getOpenRaiseSize(heroStack) {
   if (heroStack >= 25) return randFloat(2.0, 2.5);
@@ -543,9 +481,6 @@ function renderScenario(scenario) {
   // Pot
   document.getElementById('pot-display').textContent = `底池: ${formatBB(scenario.pot)}`;
 
-  // Chip stacks on table
-  renderChipsOnTable(scenario);
-  
   // Position indicator
   document.getElementById('position-indicator').innerHTML = 
     `你的位置: <strong>${scenario.heroPosition}</strong>`;
