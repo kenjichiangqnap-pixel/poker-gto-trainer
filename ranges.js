@@ -7,7 +7,7 @@
  */
 
 // ===== CONSTANTS =====
-const POSITIONS = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+const POSITIONS = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 const SUITS = ['s', 'h', 'd', 'c']; // spades, hearts, diamonds, clubs
 const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
@@ -92,7 +92,7 @@ function getICMMultiplier(icm) {
 // Returns { raise: topN, allin: topN } in number of hands from ranking
 const RFI_BASE = {
   UTG: { deep: { raise: 22 }, medium: { raise: 20 }, short: { raise: 25 }, veryShort: { allin: 28 }, desperate: { allin: 48 } },
-  HJ:  { deep: { raise: 28 }, medium: { raise: 26 }, short: { raise: 30 }, veryShort: { allin: 34 }, desperate: { allin: 55 } },
+  MP:  { deep: { raise: 28 }, medium: { raise: 26 }, short: { raise: 30 }, veryShort: { allin: 34 }, desperate: { allin: 55 } },
   CO:  { deep: { raise: 38 }, medium: { raise: 35 }, short: { raise: 40 }, veryShort: { allin: 42 }, desperate: { allin: 65 } },
   BTN: { deep: { raise: 55 }, medium: { raise: 50 }, short: { raise: 52 }, veryShort: { allin: 56 }, desperate: { allin: 80 } },
   SB:  { deep: { raise: 45 }, medium: { raise: 42 }, short: { raise: 46 }, veryShort: { allin: 52 }, desperate: { allin: 75 } },
@@ -107,14 +107,14 @@ const FACING_RAISE_BASE = {
   // SB: polarized squeeze (OOP post-flop → squeeze or fold, minimal calling)
   // BB: wide defense (already invested 1BB + closes action → defend much wider)
   vs_UTG: {
-    HJ:  { deep: { threebet: 6, call: 14 }, medium: { threebet: 5, call: 12 }, short: { threebet: 5, call: 10 }, veryShort: { allin: 10 }, desperate: { allin: 18 } },
+    MP:  { deep: { threebet: 6, call: 14 }, medium: { threebet: 5, call: 12 }, short: { threebet: 5, call: 10 }, veryShort: { allin: 10 }, desperate: { allin: 18 } },
     CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 6, call: 15 }, short: { threebet: 6, call: 12 }, veryShort: { allin: 12 }, desperate: { allin: 22 } },
     BTN: { deep: { threebet: 10, call: 22 }, medium: { threebet: 8, call: 18 }, short: { threebet: 7, call: 14 }, veryShort: { allin: 15 }, desperate: { allin: 25 } },
     SB:  { deep: { threebet: 12, call: 16 }, medium: { threebet: 10, call: 13 }, short: { threebet: 8, call: 11 }, veryShort: { allin: 14 }, desperate: { allin: 22 } },
     BB:  { deep: { threebet: 11, call: 52 }, medium: { threebet: 9, call: 40 }, short: { threebet: 8, call: 28 }, veryShort: { allin: 18 }, desperate: { allin: 32 } },
   },
-  // Facing HJ open
-  vs_HJ: {
+  // Facing MP open
+  vs_MP: {
     CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 7, call: 15 }, short: { threebet: 6, call: 12 }, veryShort: { allin: 14 }, desperate: { allin: 24 } },
     BTN: { deep: { threebet: 12, call: 24 }, medium: { threebet: 10, call: 20 }, short: { threebet: 8, call: 16 }, veryShort: { allin: 18 }, desperate: { allin: 28 } },
     SB:  { deep: { threebet: 14, call: 17 }, medium: { threebet: 12, call: 14 }, short: { threebet: 10, call: 11 }, veryShort: { allin: 16 }, desperate: { allin: 25 } },
@@ -140,7 +140,7 @@ const FACING_RAISE_BASE = {
 // ===== Facing 3-Bet ranges (you opened, someone 3-bet) =====
 const FACING_3BET_BASE = {
   UTG: { deep: { fourbet: 4, call: 10 }, medium: { fourbet: 4, call: 8 }, short: { allin: 8 }, veryShort: { allin: 10 }, desperate: { allin: 14 } },
-  HJ:  { deep: { fourbet: 5, call: 12 }, medium: { fourbet: 4, call: 10 }, short: { allin: 10 }, veryShort: { allin: 12 }, desperate: { allin: 16 } },
+  MP:  { deep: { fourbet: 5, call: 12 }, medium: { fourbet: 4, call: 10 }, short: { allin: 10 }, veryShort: { allin: 12 }, desperate: { allin: 16 } },
   CO:  { deep: { fourbet: 6, call: 15 }, medium: { fourbet: 5, call: 12 }, short: { allin: 12 }, veryShort: { allin: 14 }, desperate: { allin: 20 } },
   BTN: { deep: { fourbet: 8, call: 18 }, medium: { fourbet: 6, call: 14 }, short: { allin: 14 }, veryShort: { allin: 16 }, desperate: { allin: 22 } },
   SB:  { deep: { fourbet: 6, call: 14 }, medium: { fourbet: 5, call: 11 }, short: { allin: 11 }, veryShort: { allin: 14 }, desperate: { allin: 18 } },
@@ -149,43 +149,50 @@ const FACING_3BET_BASE = {
 // ===== BLUFF RANGES =====
 // 3-bet bluff hands (facing a raise, by hero position vs opener)
 // Uses suited Ax/Kx as blockers with backdoor equity. Disabled under high ICM.
+// NOTE: bluff hands must rank WORSE than the position's call threshold;
+// otherwise they are already captured as 'call' before the bluff check fires.
+// BB call thresholds (deep): vs UTG=52, vs MP=60, vs CO=68, vs BTN=82, vs SB=94
+// Hands ranked 52-94 with blocker value: K5s(52), K4s(57), K3s(64), K2s(67),
+//   Q7s(68), Q6s(71), Q5s(74) etc.
+// UTG/MP/CO/BTN as bluffers: A2s-A5s are weaker than their call thresholds → OK
+// SB as bluffer: call thresholds much smaller (polarized OOP) → A/Kx lands in fold zone → OK
 const THREEBET_BLUFF = {
   vs_UTG: {
-    HJ:  [],
-    CO:  ['A2s','A3s','A4s','A5s'],
-    BTN: ['A2s','A3s','A4s','A5s'],
-    SB:  ['A2s','A3s','A4s','A5s'],           // SB polarized: squeeze or fold OOP
-    BB:  ['A2s','A3s'],                        // BB wide squeeze range
+    MP:  [],                                   // MP too early vs UTG to bluff-squeeze
+    CO:  ['A2s','A3s','A4s','A5s'],            // CO: Ax blockers, outside CO call range
+    BTN: ['A2s','A3s','A4s','A5s'],            // BTN: same
+    SB:  ['A2s','A3s','A4s','A5s'],            // SB polarized OOP: squeeze or fold
+    BB:  ['K5s','K4s'],                        // BB vs UTG: Ax in call range; use Kx at rank 52-57
   },
-  vs_HJ: {
+  vs_MP: {
     CO:  ['A2s','A3s','A4s','A5s'],
     BTN: ['A2s','A3s','A4s','A5s','K2s','K3s'],
     SB:  ['A2s','A3s','A4s','A5s','K2s'],      // SB expands vs looser opener
-    BB:  ['A2s','A3s','A4s','A5s'],
+    BB:  ['K4s','K3s','K2s'],                  // BB vs MP: Ax in call range; use Kx at rank 57-67
   },
   vs_CO: {
     BTN: ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'],
     SB:  ['A2s','A3s','A4s','A5s','K2s','K3s'], // SB vs CO: wider blocker range
-    BB:  ['A2s','A3s','A4s','A5s','K2s'],
+    BB:  ['Q7s','Q6s'],                         // BB vs CO: call range=68; Q7s(68), Q6s(71) outside
   },
   vs_BTN: {
     SB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s'], // SB vs BTN: most aggressive polarization
-    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s','K6s'], // BB vs BTN: maximize squeeze
+    BB:  ['Q5s','Q4s','Q3s','Q2s'],             // BB vs BTN: call range=82; Qx blockers outside range
   },
   vs_SB: {
-    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s','K6s','K7s','Q2s','Q3s'], // BB vs SB: widest bluff range
+    BB:  ['K2s','K3s','K4s','Q2s','Q3s','Q4s','Q5s','Q6s'], // BB vs SB: call range=94; Kx/Qx outside
   },
 };
 
 // 4-bet bluff hands (hero opened, facing a 3-bet)
 // Ace-blocker makes AA less likely in villain's range.
 const FOURBET_BLUFF = {
-  UTG: ['A2s','A3s','A4s','A5s'],
-  HJ:  ['A2s','A3s','A4s','A5s'],
-  CO:  ['A2s','A3s','A4s','A5s','K2s'],
-  BTN: ['A2s','A3s','A4s','A5s','K2s','K3s'],
-  SB:  ['A2s','A3s','A4s','A5s'],
-  BB:  [],
+  UTG: ['A2s','A3s','A4s','A5s'],              // 4 combos: tightest opener = fewest bluffs
+  MP:  ['A2s','A3s','A4s','A5s','K2s'],        // 5 combos: MP opens wider than UTG
+  CO:  ['A2s','A3s','A4s','A5s','K2s','K3s'],  // 6 combos: CO opens wider still
+  BTN: ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'], // 7 combos: BTN widest non-blind opener
+  SB:  ['A2s','A3s','A4s','A5s'],              // SB OOP after 4-bet: keep tight
+  BB:  [],                                     // BB rarely opens; no 4-bet bluff range
 };
 
 // Bluffs only viable when ICM is low enough (medium or low pressure)
@@ -197,9 +204,9 @@ function bluffAllowed(icmMult, stackCat) {
 const FACING_ALLIN_BASE = {
   // Based on pot odds and ICM — simplified calling ranges
   // Wider call when getting good pot odds (short stack shover)
-  short_shove:  { UTG: 12, HJ: 14, CO: 16, BTN: 20, SB: 18, BB: 22 },
-  medium_shove: { UTG: 8,  HJ: 10, CO: 12, BTN: 15, SB: 14, BB: 18 },
-  deep_shove:   { UTG: 5,  HJ: 6,  CO: 8,  BTN: 10, SB: 8,  BB: 12 },
+  short_shove:  { UTG: 12, MP: 14, CO: 16, BTN: 20, SB: 18, BB: 22 },
+  medium_shove: { UTG: 8,  MP: 10, CO: 12, BTN: 15, SB: 14, BB: 18 },
+  deep_shove:   { UTG: 5,  MP: 6,  CO: 8,  BTN: 10, SB: 8,  BB: 12 },
 };
 
 // ===== EVALUATION ENGINE =====

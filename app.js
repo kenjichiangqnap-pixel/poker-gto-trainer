@@ -14,7 +14,7 @@ const state = {
   settings: {
     stackMode: 'random',   // 'random' | 'custom'
     customStack: 25,
-    positions: ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+    positions: ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'],
   },
 };
 
@@ -150,9 +150,9 @@ function getSuggestedRaiseSize(scenario) {
 // 6-max: positions removed from early position first
 function getActivePositions(tablePlayers) {
   // Full table positions in action order
-  const all = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+  const all = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
   if (tablePlayers >= 6) return all;
-  if (tablePlayers === 5) return ['HJ', 'CO', 'BTN', 'SB', 'BB'];
+  if (tablePlayers === 5) return ['MP', 'CO', 'BTN', 'SB', 'BB'];
   if (tablePlayers === 4) return ['CO', 'BTN', 'SB', 'BB'];
   if (tablePlayers === 3) return ['BTN', 'SB', 'BB'];
   return ['SB', 'BB']; // heads up

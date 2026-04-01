@@ -307,7 +307,7 @@ header {
 #seat-sb  { top: -24px;  left: 18%; }
 #seat-bb  { top: -24px;  right: 18%; }
 #seat-utg { top: 50%;    right: -52px; transform: translateY(-50%); }
-#seat-hj  { bottom: -24px; right: 18%; }
+#seat-mp  { bottom: -24px; right: 18%; }
 #seat-co  { bottom: -24px; left: 18%; }
 #seat-btn { top: 50%;     left: -52px; transform: translateY(-50%); }
 
