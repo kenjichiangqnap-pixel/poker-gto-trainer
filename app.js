@@ -742,7 +742,12 @@ function buildOpponentRangeHTML(scenario) {
         openerPosition: scenario.heroPosition,
         icmPressure: scenario.icmPressure,
       };
-      break;
+      // Only show raise/bluff (3-bet hands), hide call range
+      return `<div class="opp-range-section">
+        <div class="opp-range-title">對手範圍參考</div>
+        <div class="opp-range-subtitle">${title}</div>
+        ${buildInlineRangeChart(oppScenario, null, ['raise', 'bluff', 'allin'])}
+      </div>`;
     }
     case 'facingAllin':
       return ''; // cards shown inline next to result title
@@ -757,9 +762,23 @@ function buildOpponentRangeHTML(scenario) {
   </div>`;
 }
 
-function buildInlineRangeChart(scenario, highlightHand) {
+function buildInlineRangeChart(scenario, highlightHand, showOnlyActions) {
   const grid = getRangeChart(scenario);
   const highlightGrid = highlightHand ? handToGrid(highlightHand) : null;
+  
+  // If showOnlyActions specified, convert other actions to 'fold'
+  if (showOnlyActions) {
+    for (let r = 0; r < 13; r++)
+      for (let c = 0; c < 13; c++)
+        if (!showOnlyActions.includes(grid[r][c].action))
+          grid[r][c] = { ...grid[r][c], action: 'fold' };
+  }
+  
+  // Detect which actions are actually present in the grid for dynamic legend
+  const presentActions = new Set();
+  for (let r = 0; r < 13; r++)
+    for (let c = 0; c < 13; c++)
+      presentActions.add(grid[r][c].action);
   
   let html = '<div class="inline-range-wrapper">';
   html += '<div class="inline-range-chart">';
@@ -774,13 +793,22 @@ function buildInlineRangeChart(scenario, highlightHand) {
     }
   }
   html += '</div>';
-  html += `<div class="range-legend">
-    <span class="legend-item"><span class="legend-color raise"></span>加注/3-Bet</span>
-    <span class="legend-item"><span class="legend-color bluff"></span>詐唬加注</span>
-    <span class="legend-item"><span class="legend-color call"></span>跟注</span>
-    <span class="legend-item"><span class="legend-color allin"></span>全押</span>
-    <span class="legend-item"><span class="legend-color fold"></span>棄牌</span>
-  </div>`;
+  
+  // Context-aware legend: only show actions present in the chart
+  const legendItems = [
+    { action: 'raise', cls: 'raise', label: scenario.type === 'rfi' ? '加注' : '3-Bet' },
+    { action: 'bluff', cls: 'bluff', label: '詐唬加注' },
+    { action: 'call',  cls: 'call',  label: '跟注' },
+    { action: 'allin', cls: 'allin', label: '全押' },
+    { action: 'fold',  cls: 'fold',  label: '棄牌' },
+  ];
+  html += '<div class="range-legend">';
+  for (const item of legendItems) {
+    if (presentActions.has(item.action)) {
+      html += `<span class="legend-item"><span class="legend-color ${item.cls}"></span>${item.label}</span>`;
+    }
+  }
+  html += '</div>';
   html += '</div>';
   return html;
 }
