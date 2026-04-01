@@ -806,8 +806,11 @@ function buildInlineRangeChart(scenario, highlightHand, showOnlyActions) {
   html += '</div>';
   
   // Context-aware legend: only show actions present in the chart
+  const raiseLabel = scenario.type === 'rfi' ? '加注'
+                   : scenario.type === 'facing3Bet' ? '4-Bet'
+                   : '3-Bet';
   const legendItems = [
-    { action: 'raise', cls: 'raise', label: scenario.type === 'rfi' ? '加注' : '3-Bet' },
+    { action: 'raise', cls: 'raise', label: raiseLabel },
     { action: 'bluff', cls: 'bluff', label: '詐唬加注' },
     { action: 'call',  cls: 'call',  label: '跟注' },
     { action: 'allin', cls: 'allin', label: '全押' },
