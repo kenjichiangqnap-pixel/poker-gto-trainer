@@ -756,6 +756,7 @@ header {
 .range-cell.action-fold  { background: var(--bg3); color: #484f58; }
 .range-cell.action-allin { background: #9e6a03; color: #fff; }
 .range-cell.action-threebet { background: #8957e5; color: #fff; }
+.range-cell.action-bluff { background: #bc4c00; color: #fff; }
 .range-cell.is-hero-hand {
   outline: 2.5px solid var(--gold);
   outline-offset: -1px;
@@ -777,6 +778,7 @@ header {
   display: inline-block;
 }
 .legend-color.raise { background: #1a7f37; }
+.legend-color.bluff { background: #bc4c00; }
 .legend-color.call  { background: #1f6feb; }
 .legend-color.fold  { background: var(--bg3); border: 1px solid var(--border); }
 .legend-color.allin { background: #9e6a03; }

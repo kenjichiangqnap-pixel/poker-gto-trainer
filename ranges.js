@@ -144,6 +144,53 @@ const FACING_3BET_BASE = {
   SB:  { deep: { fourbet: 6, call: 14 }, medium: { fourbet: 5, call: 11 }, short: { allin: 11 }, veryShort: { allin: 14 }, desperate: { allin: 18 } },
 };
 
+// ===== BLUFF RANGES =====
+// 3-bet bluff hands (facing a raise, by hero position vs opener)
+// Uses suited Ax/Kx as blockers with backdoor equity. Disabled under high ICM.
+const THREEBET_BLUFF = {
+  vs_UTG: {
+    HJ:  [],
+    CO:  ['A2s','A3s','A4s','A5s'],
+    BTN: ['A2s','A3s','A4s','A5s'],
+    SB:  ['A2s','A3s','A4s'],
+    BB:  [],
+  },
+  vs_HJ: {
+    CO:  ['A2s','A3s','A4s','A5s'],
+    BTN: ['A2s','A3s','A4s','A5s','K2s','K3s'],
+    SB:  ['A2s','A3s','A4s','A5s'],
+    BB:  ['A2s','A3s','A4s'],
+  },
+  vs_CO: {
+    BTN: ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'],
+    SB:  ['A2s','A3s','A4s','A5s'],
+    BB:  ['A2s','A3s','A4s','A5s'],
+  },
+  vs_BTN: {
+    SB:  ['A2s','A3s','A4s','A5s','K2s','K3s'],
+    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'],
+  },
+  vs_SB: {
+    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s'],
+  },
+};
+
+// 4-bet bluff hands (hero opened, facing a 3-bet)
+// Ace-blocker makes AA less likely in villain's range.
+const FOURBET_BLUFF = {
+  UTG: ['A2s','A3s','A4s','A5s'],
+  HJ:  ['A2s','A3s','A4s','A5s'],
+  CO:  ['A2s','A3s','A4s','A5s','K2s'],
+  BTN: ['A2s','A3s','A4s','A5s','K2s','K3s'],
+  SB:  ['A2s','A3s','A4s','A5s'],
+  BB:  [],
+};
+
+// Bluffs only viable when ICM is low enough (medium or low pressure)
+function bluffAllowed(icmMult, stackCat) {
+  return icmMult >= 0.85 && (stackCat === 'deep' || stackCat === 'medium');
+}
+
 // ===== Facing All-in ranges =====
 const FACING_ALLIN_BASE = {
   // Based on pot odds and ICM — simplified calling ranges
@@ -166,9 +213,9 @@ function getCorrectAction(handNotation, scenario) {
     case 'rfi':
       return evaluateRFI(rank, pos, stackCat, icmMult);
     case 'facingRaise':
-      return evaluateFacingRaise(rank, pos, scenario.openerPosition, stackCat, icmMult);
+      return evaluateFacingRaise(rank, pos, scenario.openerPosition, stackCat, icmMult, handNotation);
     case 'facing3Bet':
-      return evaluateFacing3Bet(rank, pos, stackCat, icmMult);
+      return evaluateFacing3Bet(rank, pos, stackCat, icmMult, handNotation);
     case 'facingAllin':
       return evaluateFacingAllin(rank, pos, scenario.shoverStack, icmMult);
     default:
@@ -191,7 +238,7 @@ function evaluateRFI(rank, pos, stackCat, icmMult) {
   return 'fold';
 }
 
-function evaluateFacingRaise(rank, pos, openerPos, stackCat, icmMult) {
+function evaluateFacingRaise(rank, pos, openerPos, stackCat, icmMult, handNotation) {
   const key = `vs_${openerPos}`;
   const posRanges = FACING_RAISE_BASE[key]?.[pos];
   if (!posRanges) return 'fold';
@@ -199,7 +246,7 @@ function evaluateFacingRaise(rank, pos, openerPos, stackCat, icmMult) {
   const base = posRanges[stackCat];
   if (!base) return 'fold';
   
-  // Short stack: allin or fold
+  // Short stack: allin or fold (no bluffing)
   if (base.allin !== undefined) {
     const threshold = Math.round(base.allin * icmMult);
     return rank < threshold ? 'allin' : 'fold';
@@ -208,12 +255,19 @@ function evaluateFacingRaise(rank, pos, openerPos, stackCat, icmMult) {
   const threebetThreshold = Math.round((base.threebet || 0) * icmMult);
   const callThreshold = Math.round((base.call || 0) * icmMult);
   
-  if (rank < threebetThreshold) return 'raise'; // 3-bet displayed as "raise"
+  if (rank < threebetThreshold) return 'raise'; // value 3-bet
   if (rank < callThreshold) return 'call';
+  
+  // Check 3-bet bluff (suited blocker hands, only with enough stack & low ICM)
+  if (handNotation && bluffAllowed(icmMult, stackCat)) {
+    const bluffHands = THREEBET_BLUFF[key]?.[pos] || [];
+    if (bluffHands.includes(handNotation)) return 'bluff';
+  }
+  
   return 'fold';
 }
 
-function evaluateFacing3Bet(rank, pos, stackCat, icmMult) {
+function evaluateFacing3Bet(rank, pos, stackCat, icmMult, handNotation) {
   const base = FACING_3BET_BASE[pos]?.[stackCat];
   if (!base) return 'fold';
   
@@ -225,8 +279,15 @@ function evaluateFacing3Bet(rank, pos, stackCat, icmMult) {
   const fourbetThreshold = Math.round((base.fourbet || 0) * icmMult);
   const callThreshold = Math.round((base.call || 0) * icmMult);
   
-  if (rank < fourbetThreshold) return 'raise'; // 4-bet
+  if (rank < fourbetThreshold) return 'raise'; // value 4-bet
   if (rank < callThreshold) return 'call';
+  
+  // Check 4-bet bluff (ace-blocker hands, only with enough stack & low ICM)
+  if (handNotation && bluffAllowed(icmMult, stackCat)) {
+    const bluffHands = FOURBET_BLUFF[pos] || [];
+    if (bluffHands.includes(handNotation)) return 'bluff';
+  }
+  
   return 'fold';
 }
 
@@ -260,10 +321,11 @@ function getRangeChart(scenario) {
 // Get action label in Chinese
 function getActionLabel(action) {
   switch (action) {
-    case 'fold': return '棄牌';
-    case 'call': return '跟注';
-    case 'raise': return '加注';
-    case 'allin': return '全押';
+    case 'fold':   return '棄牌';
+    case 'call':   return '跟注';
+    case 'raise':  return '加注';
+    case 'allin':  return '全押';
+    case 'bluff':  return '加注詐唬 🎭';
     case 'threebet': return '3-Bet';
     default: return action;
   }
@@ -302,7 +364,12 @@ function getExplanation(scenario, handNotation, correctAction, playerAction) {
   const totalHands = HAND_RANKINGS.length;
   const topPct = ((handRank + 1) / totalHands * 100).toFixed(1);
   
-  if (playerAction === correctAction) {
+  // Treat raise+bluff as same for "playerAction matched" message
+  const playerMatchedBluff = (playerAction === 'raise' && correctAction === 'bluff');
+  if (playerAction === correctAction || playerMatchedBluff) {
+    if (correctAction === 'bluff') {
+      return `${handNotation} 排名前 ${topPct}%。這手牌是 GTO 詐唬範圍 🎭 —— 有 Ace/King blocker，極化加注可讓對手難以跟注，是正確的詐唬加注選擇。`;
+    }
     return `${handNotation} 在手牌中排名前 ${topPct}%，在此情境下${getActionLabel(correctAction)}是正確選擇。`;
   }
   
@@ -320,7 +387,9 @@ function getExplanation(scenario, handNotation, correctAction, playerAction) {
       break;
     case 'facingRaise':
       if (correctAction === 'raise') {
-        explanation += `面對 ${scenario.openerPosition} 的開池加注，${handNotation} 有足夠牌力進行 3-bet。`;
+        explanation += `面對 ${scenario.openerPosition} 的開池加注，${handNotation} 有足夠牌力進行價值 3-bet。`;
+      } else if (correctAction === 'bluff') {
+        explanation += `面對 ${scenario.openerPosition} 的加注，${handNotation} 雖然不是強牌，但有 Ace/King blocker 適合做 3-bet 詐唬 🎭。對手難以判斷你是真強牌還是詐唬，這是 GTO 極化策略的一部分。`;
       } else if (correctAction === 'call') {
         explanation += `面對 ${scenario.openerPosition} 的加注，${handNotation} 適合跟注但不夠強到 3-bet。`;
       } else if (correctAction === 'allin') {
@@ -331,7 +400,9 @@ function getExplanation(scenario, handNotation, correctAction, playerAction) {
       break;
     case 'facing3Bet':
       if (correctAction === 'raise') {
-        explanation += `面對 3-bet，${handNotation} 夠強可以 4-bet。`;
+        explanation += `面對 3-bet，${handNotation} 夠強可以 4-bet（價值牌）。`;
+      } else if (correctAction === 'bluff') {
+        explanation += `面對 3-bet，${handNotation} 有 Ace blocker（減少對手 AA 的可能），適合做 4-bet 詐唬 🎭。這是 GTO 的極化 4-bet 範圍，讓對手的 5-bet 決策更困難。`;
       } else if (correctAction === 'call') {
         explanation += `面對 3-bet，${handNotation} 適合跟注。`;
       } else if (correctAction === 'allin') {

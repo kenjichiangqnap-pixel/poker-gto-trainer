@@ -553,7 +553,7 @@ function handleAction(action) {
   
   const scenario = state.currentScenario;
   const correct = scenario.correctAction;
-  const isCorrect = action === correct;
+const isCorrect = action === correct || (action === 'raise' && correct === 'bluff');
   
   state.handNumber++;
   if (isCorrect) {
@@ -639,7 +639,8 @@ function buildInlineRangeChart(scenario, highlightHand) {
   }
   html += '</div>';
   html += `<div class="range-legend">
-    <span class="legend-item"><span class="legend-color raise"></span>加注</span>
+    <span class="legend-item"><span class="legend-color raise"></span>加注/3-Bet</span>
+    <span class="legend-item"><span class="legend-color bluff"></span>詐唬加注</span>
     <span class="legend-item"><span class="legend-color call"></span>跟注</span>
     <span class="legend-item"><span class="legend-color allin"></span>全押</span>
     <span class="legend-item"><span class="legend-color fold"></span>棄牌</span>
