@@ -99,35 +99,35 @@ function getICMMultiplier(icm) {
 // Early positions tighter (more callers behind); late positions much wider.
 const RFI_BASE = {
   UTG: {
-    deep:       { raise: 22 }, medium: { raise: 20 }, short: { raise: 18 },
+    deep:       { raise: 43 }, medium: { raise: 39 }, short: { raise: 35 },
     shoveShort: { allin: 22 },  // 12-17BB: ~13% (pairs 77+, AKo, AQs-ATs, KQs)
     veryShort:  { allin: 42 },  // 8-11BB:  ~25% (pairs 55+, Ax suited, AJo+, KQo)
     desperate:  { allin: 71 },  // 5-7BB:   ~42% (pairs 22+, most Ax, Kx suited, broadways)
     critical:   { allin: 110 }, // ≤4BB:   ~65% (very wide)
   },
   MP: {
-    deep:       { raise: 28 }, medium: { raise: 26 }, short: { raise: 24 },
+    deep:       { raise: 50 }, medium: { raise: 45 }, short: { raise: 41 },
     shoveShort: { allin: 30 },  // ~18% (pairs 66+, AKo-AJo, ATs+, KQs)
     veryShort:  { allin: 51 },  // ~30% (pairs 44+, Ax suited, ATo+, KJo+)
     desperate:  { allin: 81 },  // ~48% (pairs 22+, most broadways, suited connectors)
     critical:   { allin: 118 }, // ~70%
   },
   CO: {
-    deep:       { raise: 38 }, medium: { raise: 35 }, short: { raise: 33 },
+    deep:       { raise: 61 }, medium: { raise: 55 }, short: { raise: 50 },
     shoveShort: { allin: 42 },  // ~25% (pairs 55+, ATo+, A2s-A9s, KJo+, KTs)
     veryShort:  { allin: 68 },  // ~40% (pairs 33+, Ax most, KTo+, QJs+)
     desperate:  { allin: 98 },  // ~58% (very wide)
     critical:   { allin: 132 }, // ~78%
   },
   BTN: {
-    deep:       { raise: 55 }, medium: { raise: 50 }, short: { raise: 48 },
+    deep:       { raise: 101 }, medium: { raise: 90 }, short: { raise: 82 },
     shoveShort: { allin: 64 },  // ~38% (pairs 22+, Ax, Kxs, KTo+, QJo, suited connectors)
     veryShort:  { allin: 93 },  // ~55% (very wide, most suited, broadways)
     desperate:  { allin: 122 }, // ~72%
     critical:   { allin: 147 }, // ~87%
   },
   SB: {
-    deep:       { raise: 45 }, medium: { raise: 42 }, short: { raise: 40 },
+    deep:       { raise: 50 }, medium: { raise: 46 }, short: { raise: 42 },
     shoveShort: { allin: 71 },  // ~42% (widest non-blind: vs BB only)
     veryShort:  { allin: 102 }, // ~60%
     desperate:  { allin: 129 }, // ~76%
@@ -143,95 +143,93 @@ const RFI_BASE = {
 // Position facing the raise → depends on opener position
 // Returns { threebet: N, call: N } (cumulative from top)
 const FACING_RAISE_BASE = {
-  // Facing UTG open (tight opener → tighter 3bet, narrow call range)
+  // Facing UTG open (tight opener → tighter 3bet, wider call in position/BB)
   // SB: polarized squeeze (OOP post-flop → squeeze or fold, minimal calling)
   // BB: wide defense (already invested 1BB + closes action → defend much wider)
   vs_UTG: {
-    MP:  { deep: { threebet: 6, call: 14 }, medium: { threebet: 5, call: 12 }, short: { threebet: 5, call: 10 }, shoveShort: { allin: 7 },  veryShort: { allin: 10 }, desperate: { allin: 18 }, critical: { allin: 28 } },
-    CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 6, call: 15 }, short: { threebet: 6, call: 12 }, shoveShort: { allin: 9 },  veryShort: { allin: 12 }, desperate: { allin: 22 }, critical: { allin: 34 } },
-    BTN: { deep: { threebet: 10, call: 22 }, medium: { threebet: 8, call: 18 }, short: { threebet: 7, call: 14 }, shoveShort: { allin: 11 }, veryShort: { allin: 15 }, desperate: { allin: 25 }, critical: { allin: 38 } },
-    SB:  { deep: { threebet: 12, call: 16 }, medium: { threebet: 10, call: 13 }, short: { threebet: 8, call: 11 }, shoveShort: { allin: 9 },  veryShort: { allin: 14 }, desperate: { allin: 22 }, critical: { allin: 34 } },
-    BB:  { deep: { threebet: 11, call: 52 }, medium: { threebet: 9, call: 40 }, short: { threebet: 8, call: 28 }, shoveShort: { allin: 13 }, veryShort: { allin: 18 }, desperate: { allin: 32 }, critical: { allin: 50 } },
+    MP:  { deep: { threebet: 5, call: 15 }, medium: { threebet: 4, call: 13 }, short: { threebet: 4, call: 11 }, shoveShort: { allin: 8 },  veryShort: { allin: 11 }, desperate: { allin: 20 }, critical: { allin: 30 } },
+    CO:  { deep: { threebet: 6, call: 25 }, medium: { threebet: 5, call: 21 }, short: { threebet: 5, call: 18 }, shoveShort: { allin: 12 }, veryShort: { allin: 16 }, desperate: { allin: 28 }, critical: { allin: 42 } },
+    BTN: { deep: { threebet: 7, call: 33 }, medium: { threebet: 6, call: 28 }, short: { threebet: 5, call: 24 }, shoveShort: { allin: 15 }, veryShort: { allin: 20 }, desperate: { allin: 32 }, critical: { allin: 48 } },
+    SB:  { deep: { threebet: 5, call: 22 }, medium: { threebet: 4, call: 18 }, short: { threebet: 4, call: 16 }, shoveShort: { allin: 12 }, veryShort: { allin: 18 }, desperate: { allin: 28 }, critical: { allin: 42 } },
+    BB:  { deep: { threebet: 6, call: 66 }, medium: { threebet: 5, call: 56 }, short: { threebet: 5, call: 48 }, shoveShort: { allin: 17 }, veryShort: { allin: 23 }, desperate: { allin: 40 }, critical: { allin: 58 } },
   },
   // Facing MP open
   vs_MP: {
-    CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 7, call: 15 }, short: { threebet: 6, call: 12 }, shoveShort: { allin: 10 }, veryShort: { allin: 14 }, desperate: { allin: 24 }, critical: { allin: 36 } },
-    BTN: { deep: { threebet: 12, call: 24 }, medium: { threebet: 10, call: 20 }, short: { threebet: 8, call: 16 }, shoveShort: { allin: 13 }, veryShort: { allin: 18 }, desperate: { allin: 28 }, critical: { allin: 42 } },
-    SB:  { deep: { threebet: 14, call: 17 }, medium: { threebet: 12, call: 14 }, short: { threebet: 10, call: 11 }, shoveShort: { allin: 11 }, veryShort: { allin: 16 }, desperate: { allin: 25 }, critical: { allin: 38 } },
-    BB:  { deep: { threebet: 13, call: 60 }, medium: { threebet: 11, call: 48 }, short: { threebet: 9, call: 34 }, shoveShort: { allin: 14 }, veryShort: { allin: 20 }, desperate: { allin: 36 }, critical: { allin: 55 } },
+    CO:  { deep: { threebet: 7, call: 30 }, medium: { threebet: 6, call: 26 }, short: { threebet: 5, call: 22 }, shoveShort: { allin: 14 }, veryShort: { allin: 20 }, desperate: { allin: 32 }, critical: { allin: 46 } },
+    BTN: { deep: { threebet: 9, call: 42 }, medium: { threebet: 8, call: 36 }, short: { threebet: 7, call: 30 }, shoveShort: { allin: 18 }, veryShort: { allin: 25 }, desperate: { allin: 38 }, critical: { allin: 55 } },
+    SB:  { deep: { threebet: 7, call: 28 }, medium: { threebet: 6, call: 24 }, short: { threebet: 5, call: 20 }, shoveShort: { allin: 14 }, veryShort: { allin: 20 }, desperate: { allin: 32 }, critical: { allin: 46 } },
+    BB:  { deep: { threebet: 8, call: 75 }, medium: { threebet: 7, call: 64 }, short: { threebet: 6, call: 54 }, shoveShort: { allin: 18 }, veryShort: { allin: 26 }, desperate: { allin: 44 }, critical: { allin: 64 } },
   },
   // Facing CO open
   vs_CO: {
-    BTN: { deep: { threebet: 14, call: 28 }, medium: { threebet: 12, call: 24 }, short: { threebet: 10, call: 18 }, shoveShort: { allin: 14 }, veryShort: { allin: 20 }, desperate: { allin: 32 }, critical: { allin: 48 } },
-    SB:  { deep: { threebet: 16, call: 20 }, medium: { threebet: 14, call: 16 }, short: { threebet: 11, call: 13 }, shoveShort: { allin: 13 }, veryShort: { allin: 18 }, desperate: { allin: 28 }, critical: { allin: 42 } },
-    BB:  { deep: { threebet: 16, call: 68 }, medium: { threebet: 13, call: 55 }, short: { threebet: 11, call: 42 }, shoveShort: { allin: 17 }, veryShort: { allin: 24 }, desperate: { allin: 40 }, critical: { allin: 62 } },
+    BTN: { deep: { threebet: 12, call: 50 }, medium: { threebet: 10, call: 42 }, short: { threebet: 9, call: 36 }, shoveShort: { allin: 20 }, veryShort: { allin: 28 }, desperate: { allin: 42 }, critical: { allin: 60 } },
+    SB:  { deep: { threebet: 10, call: 38 }, medium: { threebet: 8, call: 32 }, short: { threebet: 7, call: 28 }, shoveShort: { allin: 18 }, veryShort: { allin: 24 }, desperate: { allin: 36 }, critical: { allin: 52 } },
+    BB:  { deep: { threebet: 12, call: 90 }, medium: { threebet: 10, call: 76 }, short: { threebet: 9, call: 65 }, shoveShort: { allin: 22 }, veryShort: { allin: 32 }, desperate: { allin: 52 }, critical: { allin: 76 } },
   },
   // Facing BTN open (BTN opens very wide → SB/BB defend most aggressively)
   vs_BTN: {
-    SB:  { deep: { threebet: 22, call: 27 }, medium: { threebet: 18, call: 22 }, short: { threebet: 14, call: 17 }, shoveShort: { allin: 16 }, veryShort: { allin: 22 }, desperate: { allin: 34 }, critical: { allin: 52 } },
-    BB:  { deep: { threebet: 20, call: 82 }, medium: { threebet: 16, call: 66 }, short: { threebet: 13, call: 52 }, shoveShort: { allin: 21 }, veryShort: { allin: 30 }, desperate: { allin: 48 }, critical: { allin: 75 } },
+    SB:  { deep: { threebet: 20, call: 80 }, medium: { threebet: 17, call: 68 }, short: { threebet: 14, call: 56 }, shoveShort: { allin: 26 }, veryShort: { allin: 36 }, desperate: { allin: 52 }, critical: { allin: 72 } },
+    BB:  { deep: { threebet: 18, call: 140 }, medium: { threebet: 15, call: 118 }, short: { threebet: 12, call: 100 }, shoveShort: { allin: 30 }, veryShort: { allin: 42 }, desperate: { allin: 65 }, critical: { allin: 95 } },
   },
   // Facing SB open (BB only: maximize defense vs wide SB range + position advantage)
   vs_SB: {
-    BB:  { deep: { threebet: 24, call: 94 }, medium: { threebet: 20, call: 78 }, short: { threebet: 16, call: 62 }, shoveShort: { allin: 25 }, veryShort: { allin: 35 }, desperate: { allin: 55 }, critical: { allin: 85 } },
+    BB:  { deep: { threebet: 22, call: 120 }, medium: { threebet: 19, call: 102 }, short: { threebet: 16, call: 86 }, shoveShort: { allin: 30 }, veryShort: { allin: 42 }, desperate: { allin: 62 }, critical: { allin: 95 } },
   }
 };
 
 // ===== Facing 3-Bet ranges (you opened, someone 3-bet) =====
 const FACING_3BET_BASE = {
-  UTG: { deep: { fourbet: 4, call: 10 }, medium: { fourbet: 4, call: 8 }, short: { allin: 8 }, shoveShort: { allin: 8 }, veryShort: { allin: 10 }, desperate: { allin: 14 }, critical: { allin: 20 } },
-  MP:  { deep: { fourbet: 5, call: 12 }, medium: { fourbet: 4, call: 10 }, short: { allin: 10 }, shoveShort: { allin: 10 }, veryShort: { allin: 12 }, desperate: { allin: 16 }, critical: { allin: 24 } },
-  CO:  { deep: { fourbet: 6, call: 15 }, medium: { fourbet: 5, call: 12 }, short: { allin: 12 }, shoveShort: { allin: 12 }, veryShort: { allin: 14 }, desperate: { allin: 20 }, critical: { allin: 30 } },
-  BTN: { deep: { fourbet: 8, call: 18 }, medium: { fourbet: 6, call: 14 }, short: { allin: 14 }, shoveShort: { allin: 14 }, veryShort: { allin: 16 }, desperate: { allin: 22 }, critical: { allin: 34 } },
-  SB:  { deep: { fourbet: 6, call: 14 }, medium: { fourbet: 5, call: 11 }, short: { allin: 11 }, shoveShort: { allin: 11 }, veryShort: { allin: 14 }, desperate: { allin: 18 }, critical: { allin: 28 } },
+  UTG: { deep: { fourbet: 4, call: 20 }, medium: { fourbet: 4, call: 16 }, short: { allin: 14 }, shoveShort: { allin: 14 }, veryShort: { allin: 16 }, desperate: { allin: 22 }, critical: { allin: 30 } },
+  MP:  { deep: { fourbet: 5, call: 28 }, medium: { fourbet: 5, call: 22 }, short: { allin: 18 }, shoveShort: { allin: 18 }, veryShort: { allin: 20 }, desperate: { allin: 26 }, critical: { allin: 36 } },
+  CO:  { deep: { fourbet: 7, call: 38 }, medium: { fourbet: 6, call: 30 }, short: { allin: 22 }, shoveShort: { allin: 22 }, veryShort: { allin: 26 }, desperate: { allin: 32 }, critical: { allin: 44 } },
+  BTN: { deep: { fourbet: 8, call: 45 }, medium: { fourbet: 7, call: 36 }, short: { allin: 26 }, shoveShort: { allin: 26 }, veryShort: { allin: 30 }, desperate: { allin: 36 }, critical: { allin: 50 } },
+  SB:  { deep: { fourbet: 6, call: 28 }, medium: { fourbet: 5, call: 22 }, short: { allin: 18 }, shoveShort: { allin: 18 }, veryShort: { allin: 22 }, desperate: { allin: 28 }, critical: { allin: 40 } },
 };
 
 // ===== BLUFF RANGES =====
 // 3-bet bluff hands (facing a raise, by hero position vs opener)
-// Uses suited Ax/Kx as blockers with backdoor equity. Disabled under high ICM.
+// Uses blocker hands with backdoor equity. Disabled under high ICM.
 // NOTE: bluff hands must rank WORSE than the position's call threshold;
 // otherwise they are already captured as 'call' before the bluff check fires.
-// BB call thresholds (deep): vs UTG=52, vs MP=60, vs CO=68, vs BTN=82, vs SB=94
-// Hands ranked 52-94 with blocker value: K5s(52), K4s(57), K3s(64), K2s(67),
-//   Q7s(68), Q6s(71), Q5s(74) etc.
-// UTG/MP/CO/BTN as bluffers: A2s-A5s are weaker than their call thresholds → OK
-// SB as bluffer: call thresholds much smaller (polarized OOP) → A/Kx lands in fold zone → OK
+// BB call thresholds (deep): vs UTG=66, vs MP=75, vs CO=90, vs BTN=140, vs SB=120
+// With wider call ranges, bluff hands shift to Kx/Qx/suited connectors outside call range.
 const THREEBET_BLUFF = {
   vs_UTG: {
     MP:  [],                                   // MP too early vs UTG to bluff-squeeze
-    CO:  ['A2s','A3s','A4s','A5s'],            // CO: Ax blockers, outside CO call range
-    BTN: ['A2s','A3s','A4s','A5s'],            // BTN: same
-    SB:  ['A2s','A3s','A4s','A5s'],            // SB polarized OOP: squeeze or fold
-    BB:  ['K5s','K4s'],                        // BB vs UTG: Ax in call range; use Kx at rank 52-57
+    CO:  ['A2s','A3s','A4s','A5s'],            // CO: call=25; Ax blockers still outside
+    BTN: ['A2s','87s','76s','65s'],            // BTN: call=33 absorbs A3s-A5s; use suited connectors
+    SB:  ['A2s','A3s','A4s','A5s'],            // SB: call=22; Ax blockers still outside
+    BB:  ['Q7s','Q6s'],                        // BB: call=66 absorbs Kx; Qx at rank 68-71
   },
   vs_MP: {
-    CO:  ['A2s','A3s','A4s','A5s'],
-    BTN: ['A2s','A3s','A4s','A5s','K2s','K3s'],
-    SB:  ['A2s','A3s','A4s','A5s','K2s'],      // SB expands vs looser opener
-    BB:  ['K4s','K3s','K2s'],                  // BB vs MP: Ax in call range; use Kx at rank 57-67
+    CO:  ['A2s','A3s','87s','76s'],            // CO: call=30 absorbs A5s/A4s
+    BTN: ['K2s','K3s','97s','76s'],            // BTN: call=42 absorbs all Ax; use Kx/connectors
+    SB:  ['A2s','A3s','A4s','K2s'],            // SB: call=28 absorbs A5s
+    BB:  ['T6s','Q5s'],                        // BB: call=75 absorbs lower Kx/Qx
   },
   vs_CO: {
-    BTN: ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'],
-    SB:  ['A2s','A3s','A4s','A5s','K2s','K3s'], // SB vs CO: wider blocker range
-    BB:  ['Q7s','Q6s'],                         // BB vs CO: call range=68; Q7s(68), Q6s(71) outside
+    BTN: ['K2s','K3s','K4s','86s'],            // BTN: call=50 absorbs Ax; K4s(57) still outside
+    SB:  ['K2s','K3s','87s','76s'],            // SB: call=38 absorbs Ax; use Kx/connectors
+    BB:  ['K9o','A4o'],                        // BB: call=90 very wide; few bluffs viable
   },
   vs_BTN: {
-    SB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s'], // SB vs BTN: most aggressive polarization
-    BB:  ['Q5s','Q4s','Q3s','Q2s'],             // BB vs BTN: call range=82; Qx blockers outside range
+    SB:  ['Q5s','T5s','95s','Q4s'],            // SB: call=80 absorbs Ax/Kx; use rank 80+ hands
+    BB:  [],                                   // BB: call=140 (83%); no bluff range needed
   },
   vs_SB: {
-    BB:  ['K2s','K3s','K4s','Q2s','Q3s','Q4s','Q5s','Q6s'], // BB vs SB: call range=94; Kx/Qx outside
+    BB:  [],                                   // BB: call=120 (71%); no bluff range needed
   },
 };
 
 // 4-bet bluff hands (hero opened, facing a 3-bet)
-// Ace-blocker makes AA less likely in villain's range.
+// Blocker hands (Ace/King) make villain's premium range less likely.
+// With wider call ranges, bluff hands shift to Kx outside the call threshold.
 const FOURBET_BLUFF = {
-  UTG: ['A2s','A3s','A4s','A5s'],              // 4 combos: tightest opener = fewest bluffs
-  MP:  ['A2s','A3s','A4s','A5s','K2s'],        // 5 combos: MP opens wider than UTG
-  CO:  ['A2s','A3s','A4s','A5s','K2s','K3s'],  // 6 combos: CO opens wider still
-  BTN: ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'], // 7 combos: BTN widest non-blind opener
-  SB:  ['A2s','A3s','A4s','A5s'],              // SB OOP after 4-bet: keep tight
+  UTG: ['A2s','A3s','A4s','A5s'],              // call=20; all Ax suited still outside
+  MP:  ['A2s','A3s','A4s','K2s'],              // call=28; A5s(26) now inside, drop it
+  CO:  ['K2s','K3s','97s','76s'],              // call=38; Ax suited inside, use Kx/connectors
+  BTN: ['K2s','K3s','K4s','K5s'],              // call=45; Ax inside, use Kx blockers
+  SB:  ['A2s','A3s','A4s'],                    // call=28; A5s(26) inside, drop it
   BB:  [],                                     // BB rarely opens; no 4-bet bluff range
 };
 
