@@ -446,16 +446,16 @@ header {
   min-height: 14px;
 }
 
-.fold-btn { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-.call-btn { background: linear-gradient(135deg, #3498db, #2980b9); }
-.raise-btn { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-.allin-btn { background: linear-gradient(135deg, #f39c12, #e67e22); }
-.next-btn { background: linear-gradient(135deg, #9b59b6, #8e44ad); flex: 1 1 100%; max-width: 100%; }
+.fold-btn { background: linear-gradient(135deg, #757575, #616161); }
+.call-btn { background: linear-gradient(135deg, #43a047, #2e7d32); }
+.raise-btn { background: linear-gradient(135deg, #e53935, #c62828); }
+.allin-btn { background: linear-gradient(135deg, #8e24aa, #6a1b9a); }
+.next-btn { background: linear-gradient(135deg, #3498db, #2980b9); flex: 1 1 100%; max-width: 100%; }
 
-.fold-btn:active:not(:disabled) { background: #ff5252; }
-.call-btn:active:not(:disabled) { background: #42a5f5; }
-.raise-btn:active:not(:disabled) { background: #4cdf94; }
-.allin-btn:active:not(:disabled) { background: #ffb74d; }
+.fold-btn:active:not(:disabled) { background: #9e9e9e; }
+.call-btn:active:not(:disabled) { background: #66bb6a; }
+.raise-btn:active:not(:disabled) { background: #ef5350; }
+.allin-btn:active:not(:disabled) { background: #ab47bc; }
 
 /* ========== Result Box ========== */
 .result-box {
