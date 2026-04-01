@@ -717,6 +717,25 @@ header {
 }
 
 /* Inline range chart in result box */
+.opp-range-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.opp-range-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.opp-range-subtitle {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
 .inline-range-wrapper {
   margin-top: 12px;
   overflow-x: auto;

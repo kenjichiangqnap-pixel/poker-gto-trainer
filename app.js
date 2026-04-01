@@ -631,13 +631,72 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
   
   // Inline range chart
   resultHTML += buildInlineRangeChart(scenario, scenario.handNotation);
+  // Opponent range
+  resultHTML += buildOpponentRangeHTML(scenario);
   resultBox.innerHTML = resultHTML;
   
   // Scroll result into view on mobile
   setTimeout(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
 
-function buildInlineRangeChart(scenario, highlightHand) {
+function buildOpponentRangeHTML(scenario) {
+  let oppScenario, title;
+
+  switch (scenario.type) {
+    case 'facingRaise': {
+      const oppPos = scenario.openerPosition;
+      if (!oppPos) return '';
+      const oppStack = (scenario.stacks && scenario.stacks[oppPos]) || 25;
+      title = `對手 (${oppPos}) 開池範圍 — ${oppStack} BB`;
+      oppScenario = {
+        type: 'rfi',
+        heroPosition: oppPos,
+        heroStack: oppStack,
+        icmPressure: scenario.icmPressure,
+      };
+      break;
+    }
+    case 'facing3Bet': {
+      const tb = scenario.actionsBefore && scenario.actionsBefore.find(a => a.action === '3bet');
+      if (!tb) return '';
+      const oppPos = tb.position;
+      const oppStack = (scenario.stacks && scenario.stacks[oppPos]) || 25;
+      title = `對手 (${oppPos}) 3-bet 範圍 — vs ${scenario.heroPosition} 開池`;
+      oppScenario = {
+        type: 'facingRaise',
+        heroPosition: oppPos,
+        heroStack: oppStack,
+        openerPosition: scenario.heroPosition,
+        icmPressure: scenario.icmPressure,
+      };
+      break;
+    }
+    case 'facingAllin': {
+      const aa = scenario.actionsBefore && scenario.actionsBefore.find(a => a.action === 'allin');
+      if (!aa) return '';
+      const oppPos = aa.position;
+      const oppStack = scenario.shoverStack || (scenario.stacks && scenario.stacks[oppPos]) || 10;
+      title = `對手 (${oppPos}) 全押範圍 — ${oppStack} BB`;
+      oppScenario = {
+        type: 'rfi',
+        heroPosition: oppPos,
+        heroStack: oppStack,
+        icmPressure: scenario.icmPressure,
+      };
+      break;
+    }
+    default:
+      return ''; // rfi: hero is first aggressor, no opponent range
+  }
+
+  return `<div class="opp-range-section">
+    <div class="opp-range-title">對手範圍參考</div>
+    <div class="opp-range-subtitle">${title}</div>
+    ${buildInlineRangeChart(oppScenario, null)}
+  </div>`;
+}
+
+
   const grid = getRangeChart(scenario);
   const highlightGrid = highlightHand ? handToGrid(highlightHand) : null;
   
