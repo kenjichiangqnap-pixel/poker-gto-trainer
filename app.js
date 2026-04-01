@@ -134,7 +134,6 @@ function getSuggestedRaiseSize(scenario) {
   switch (scenario.type) {
     case 'rfi':
       return getStackCategory(scenario.heroStack) === 'veryShort'
-          || getStackCategory(scenario.heroStack) === 'shoveShort'
           || getStackCategory(scenario.heroStack) === 'desperate'
           || getStackCategory(scenario.heroStack) === 'critical'
         ? scenario.heroStack : Math.round(randFloat(2.0, 2.5) * 10) / 10;
@@ -429,7 +428,7 @@ function getScenarioDescription(scenario) {
       }
       desc += `<br>你在 <strong>${s.heroPosition}</strong> 位，籌碼 <strong>${s.heroStack} BB</strong>`;
       const cat = getStackCategory(s.heroStack);
-      if (cat === 'shoveShort' || cat === 'veryShort' || cat === 'desperate' || cat === 'critical') {
+      if (cat === 'veryShort' || cat === 'desperate' || cat === 'critical') {
         desc += '<br>⚡ <em>短碼推-蓋模式 (Push or Fold)</em>';
       }
       break;
