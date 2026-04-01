@@ -70,12 +70,17 @@ function handToNotation(card1, card2) {
 // Hands not covered → fold
 
 // Stack depth categories
+// push/fold thresholds based on Nash equilibrium for 6-max tournament:
+//   shoveShort 12-17BB: explicit push-or-fold zone (most positions)
+//   critical <=4BB:     near-any-two shove
 function getStackCategory(bb) {
   if (bb >= 40) return 'deep';
   if (bb >= 25) return 'medium';
-  if (bb >= 15) return 'short';
-  if (bb >= 8) return 'veryShort';
-  return 'desperate';
+  if (bb >= 18) return 'short';
+  if (bb >= 12) return 'shoveShort';
+  if (bb >= 8)  return 'veryShort';
+  if (bb >= 5)  return 'desperate';
+  return 'critical';
 }
 
 // ICM multiplier: tightens ranges under pressure
@@ -89,14 +94,49 @@ function getICMMultiplier(icm) {
 }
 
 // ===== RFI (Raise First In) ranges =====
-// Returns { raise: topN, allin: topN } in number of hands from ranking
+// deep/medium/short → open-raise. shoveShort/veryShort/desperate/critical → all-in or fold.
+// Push % based on Nash equilibrium; more callers (early pos) = tighter push range.
+// BTN shoves into SB+BB, SB shoves into BB only → BTN~SB widest non-blind pushers.
 const RFI_BASE = {
-  UTG: { deep: { raise: 22 }, medium: { raise: 20 }, short: { raise: 25 }, veryShort: { allin: 28 }, desperate: { allin: 48 } },
-  MP:  { deep: { raise: 28 }, medium: { raise: 26 }, short: { raise: 30 }, veryShort: { allin: 34 }, desperate: { allin: 55 } },
-  CO:  { deep: { raise: 38 }, medium: { raise: 35 }, short: { raise: 40 }, veryShort: { allin: 42 }, desperate: { allin: 65 } },
-  BTN: { deep: { raise: 55 }, medium: { raise: 50 }, short: { raise: 52 }, veryShort: { allin: 56 }, desperate: { allin: 80 } },
-  SB:  { deep: { raise: 45 }, medium: { raise: 42 }, short: { raise: 46 }, veryShort: { allin: 52 }, desperate: { allin: 75 } },
-  BB:  { deep: { raise: 0 }, medium: { raise: 0 }, short: { raise: 0 }, veryShort: { allin: 0 }, desperate: { allin: 0 } }
+  UTG: {
+    deep:       { raise: 22 }, medium: { raise: 20 }, short: { raise: 25 },
+    shoveShort: { allin: 37 },  // ~22% Nash (5 callers)
+    veryShort:  { allin: 51 },  // ~30%
+    desperate:  { allin: 78 },  // ~46%
+    critical:   { allin: 115 }, // ~68%
+  },
+  MP: {
+    deep:       { raise: 28 }, medium: { raise: 26 }, short: { raise: 30 },
+    shoveShort: { allin: 47 },  // ~28% Nash (4 callers)
+    veryShort:  { allin: 61 },  // ~36%
+    desperate:  { allin: 88 },  // ~52%
+    critical:   { allin: 122 }, // ~72%
+  },
+  CO: {
+    deep:       { raise: 38 }, medium: { raise: 35 }, short: { raise: 40 },
+    shoveShort: { allin: 64 },  // ~38% Nash (3 callers)
+    veryShort:  { allin: 81 },  // ~48%
+    desperate:  { allin: 105 }, // ~62%
+    critical:   { allin: 135 }, // ~80%
+  },
+  BTN: {
+    deep:       { raise: 55 }, medium: { raise: 50 }, short: { raise: 52 },
+    shoveShort: { allin: 85 },  // ~50% Nash (SB+BB)
+    veryShort:  { allin: 105 }, // ~62%
+    desperate:  { allin: 125 }, // ~74%
+    critical:   { allin: 149 }, // ~88%
+  },
+  SB: {
+    deep:       { raise: 45 }, medium: { raise: 42 }, short: { raise: 46 },
+    shoveShort: { allin: 88 },  // ~52% Nash (BB only → wider than BTN)
+    veryShort:  { allin: 110 }, // ~65%
+    desperate:  { allin: 132 }, // ~78%
+    critical:   { allin: 155 }, // ~92%
+  },
+  BB: {
+    deep:       { raise: 0 }, medium: { raise: 0 }, short: { raise: 0 },
+    shoveShort: { allin: 0 }, veryShort: { allin: 0 }, desperate: { allin: 0 }, critical: { allin: 0 }
+  }
 };
 
 // ===== Facing Open Raise ranges =====
@@ -107,43 +147,43 @@ const FACING_RAISE_BASE = {
   // SB: polarized squeeze (OOP post-flop → squeeze or fold, minimal calling)
   // BB: wide defense (already invested 1BB + closes action → defend much wider)
   vs_UTG: {
-    MP:  { deep: { threebet: 6, call: 14 }, medium: { threebet: 5, call: 12 }, short: { threebet: 5, call: 10 }, veryShort: { allin: 10 }, desperate: { allin: 18 } },
-    CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 6, call: 15 }, short: { threebet: 6, call: 12 }, veryShort: { allin: 12 }, desperate: { allin: 22 } },
-    BTN: { deep: { threebet: 10, call: 22 }, medium: { threebet: 8, call: 18 }, short: { threebet: 7, call: 14 }, veryShort: { allin: 15 }, desperate: { allin: 25 } },
-    SB:  { deep: { threebet: 12, call: 16 }, medium: { threebet: 10, call: 13 }, short: { threebet: 8, call: 11 }, veryShort: { allin: 14 }, desperate: { allin: 22 } },
-    BB:  { deep: { threebet: 11, call: 52 }, medium: { threebet: 9, call: 40 }, short: { threebet: 8, call: 28 }, veryShort: { allin: 18 }, desperate: { allin: 32 } },
+    MP:  { deep: { threebet: 6, call: 14 }, medium: { threebet: 5, call: 12 }, short: { threebet: 5, call: 10 }, shoveShort: { allin: 7 },  veryShort: { allin: 10 }, desperate: { allin: 18 }, critical: { allin: 28 } },
+    CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 6, call: 15 }, short: { threebet: 6, call: 12 }, shoveShort: { allin: 9 },  veryShort: { allin: 12 }, desperate: { allin: 22 }, critical: { allin: 34 } },
+    BTN: { deep: { threebet: 10, call: 22 }, medium: { threebet: 8, call: 18 }, short: { threebet: 7, call: 14 }, shoveShort: { allin: 11 }, veryShort: { allin: 15 }, desperate: { allin: 25 }, critical: { allin: 38 } },
+    SB:  { deep: { threebet: 12, call: 16 }, medium: { threebet: 10, call: 13 }, short: { threebet: 8, call: 11 }, shoveShort: { allin: 9 },  veryShort: { allin: 14 }, desperate: { allin: 22 }, critical: { allin: 34 } },
+    BB:  { deep: { threebet: 11, call: 52 }, medium: { threebet: 9, call: 40 }, short: { threebet: 8, call: 28 }, shoveShort: { allin: 13 }, veryShort: { allin: 18 }, desperate: { allin: 32 }, critical: { allin: 50 } },
   },
   // Facing MP open
   vs_MP: {
-    CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 7, call: 15 }, short: { threebet: 6, call: 12 }, veryShort: { allin: 14 }, desperate: { allin: 24 } },
-    BTN: { deep: { threebet: 12, call: 24 }, medium: { threebet: 10, call: 20 }, short: { threebet: 8, call: 16 }, veryShort: { allin: 18 }, desperate: { allin: 28 } },
-    SB:  { deep: { threebet: 14, call: 17 }, medium: { threebet: 12, call: 14 }, short: { threebet: 10, call: 11 }, veryShort: { allin: 16 }, desperate: { allin: 25 } },
-    BB:  { deep: { threebet: 13, call: 60 }, medium: { threebet: 11, call: 48 }, short: { threebet: 9, call: 34 }, veryShort: { allin: 20 }, desperate: { allin: 36 } },
+    CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 7, call: 15 }, short: { threebet: 6, call: 12 }, shoveShort: { allin: 10 }, veryShort: { allin: 14 }, desperate: { allin: 24 }, critical: { allin: 36 } },
+    BTN: { deep: { threebet: 12, call: 24 }, medium: { threebet: 10, call: 20 }, short: { threebet: 8, call: 16 }, shoveShort: { allin: 13 }, veryShort: { allin: 18 }, desperate: { allin: 28 }, critical: { allin: 42 } },
+    SB:  { deep: { threebet: 14, call: 17 }, medium: { threebet: 12, call: 14 }, short: { threebet: 10, call: 11 }, shoveShort: { allin: 11 }, veryShort: { allin: 16 }, desperate: { allin: 25 }, critical: { allin: 38 } },
+    BB:  { deep: { threebet: 13, call: 60 }, medium: { threebet: 11, call: 48 }, short: { threebet: 9, call: 34 }, shoveShort: { allin: 14 }, veryShort: { allin: 20 }, desperate: { allin: 36 }, critical: { allin: 55 } },
   },
   // Facing CO open
   vs_CO: {
-    BTN: { deep: { threebet: 14, call: 28 }, medium: { threebet: 12, call: 24 }, short: { threebet: 10, call: 18 }, veryShort: { allin: 20 }, desperate: { allin: 32 } },
-    SB:  { deep: { threebet: 16, call: 20 }, medium: { threebet: 14, call: 16 }, short: { threebet: 11, call: 13 }, veryShort: { allin: 18 }, desperate: { allin: 28 } },
-    BB:  { deep: { threebet: 16, call: 68 }, medium: { threebet: 13, call: 55 }, short: { threebet: 11, call: 42 }, veryShort: { allin: 24 }, desperate: { allin: 40 } },
+    BTN: { deep: { threebet: 14, call: 28 }, medium: { threebet: 12, call: 24 }, short: { threebet: 10, call: 18 }, shoveShort: { allin: 14 }, veryShort: { allin: 20 }, desperate: { allin: 32 }, critical: { allin: 48 } },
+    SB:  { deep: { threebet: 16, call: 20 }, medium: { threebet: 14, call: 16 }, short: { threebet: 11, call: 13 }, shoveShort: { allin: 13 }, veryShort: { allin: 18 }, desperate: { allin: 28 }, critical: { allin: 42 } },
+    BB:  { deep: { threebet: 16, call: 68 }, medium: { threebet: 13, call: 55 }, short: { threebet: 11, call: 42 }, shoveShort: { allin: 17 }, veryShort: { allin: 24 }, desperate: { allin: 40 }, critical: { allin: 62 } },
   },
   // Facing BTN open (BTN opens very wide → SB/BB defend most aggressively)
   vs_BTN: {
-    SB:  { deep: { threebet: 22, call: 27 }, medium: { threebet: 18, call: 22 }, short: { threebet: 14, call: 17 }, veryShort: { allin: 22 }, desperate: { allin: 34 } },
-    BB:  { deep: { threebet: 20, call: 82 }, medium: { threebet: 16, call: 66 }, short: { threebet: 13, call: 52 }, veryShort: { allin: 30 }, desperate: { allin: 48 } },
+    SB:  { deep: { threebet: 22, call: 27 }, medium: { threebet: 18, call: 22 }, short: { threebet: 14, call: 17 }, shoveShort: { allin: 16 }, veryShort: { allin: 22 }, desperate: { allin: 34 }, critical: { allin: 52 } },
+    BB:  { deep: { threebet: 20, call: 82 }, medium: { threebet: 16, call: 66 }, short: { threebet: 13, call: 52 }, shoveShort: { allin: 21 }, veryShort: { allin: 30 }, desperate: { allin: 48 }, critical: { allin: 75 } },
   },
   // Facing SB open (BB only: maximize defense vs wide SB range + position advantage)
   vs_SB: {
-    BB:  { deep: { threebet: 24, call: 94 }, medium: { threebet: 20, call: 78 }, short: { threebet: 16, call: 62 }, veryShort: { allin: 35 }, desperate: { allin: 55 } },
+    BB:  { deep: { threebet: 24, call: 94 }, medium: { threebet: 20, call: 78 }, short: { threebet: 16, call: 62 }, shoveShort: { allin: 25 }, veryShort: { allin: 35 }, desperate: { allin: 55 }, critical: { allin: 85 } },
   }
 };
 
 // ===== Facing 3-Bet ranges (you opened, someone 3-bet) =====
 const FACING_3BET_BASE = {
-  UTG: { deep: { fourbet: 4, call: 10 }, medium: { fourbet: 4, call: 8 }, short: { allin: 8 }, veryShort: { allin: 10 }, desperate: { allin: 14 } },
-  MP:  { deep: { fourbet: 5, call: 12 }, medium: { fourbet: 4, call: 10 }, short: { allin: 10 }, veryShort: { allin: 12 }, desperate: { allin: 16 } },
-  CO:  { deep: { fourbet: 6, call: 15 }, medium: { fourbet: 5, call: 12 }, short: { allin: 12 }, veryShort: { allin: 14 }, desperate: { allin: 20 } },
-  BTN: { deep: { fourbet: 8, call: 18 }, medium: { fourbet: 6, call: 14 }, short: { allin: 14 }, veryShort: { allin: 16 }, desperate: { allin: 22 } },
-  SB:  { deep: { fourbet: 6, call: 14 }, medium: { fourbet: 5, call: 11 }, short: { allin: 11 }, veryShort: { allin: 14 }, desperate: { allin: 18 } },
+  UTG: { deep: { fourbet: 4, call: 10 }, medium: { fourbet: 4, call: 8 }, short: { allin: 8 }, shoveShort: { allin: 8 }, veryShort: { allin: 10 }, desperate: { allin: 14 }, critical: { allin: 20 } },
+  MP:  { deep: { fourbet: 5, call: 12 }, medium: { fourbet: 4, call: 10 }, short: { allin: 10 }, shoveShort: { allin: 10 }, veryShort: { allin: 12 }, desperate: { allin: 16 }, critical: { allin: 24 } },
+  CO:  { deep: { fourbet: 6, call: 15 }, medium: { fourbet: 5, call: 12 }, short: { allin: 12 }, shoveShort: { allin: 12 }, veryShort: { allin: 14 }, desperate: { allin: 20 }, critical: { allin: 30 } },
+  BTN: { deep: { fourbet: 8, call: 18 }, medium: { fourbet: 6, call: 14 }, short: { allin: 14 }, shoveShort: { allin: 14 }, veryShort: { allin: 16 }, desperate: { allin: 22 }, critical: { allin: 34 } },
+  SB:  { deep: { fourbet: 6, call: 14 }, medium: { fourbet: 5, call: 11 }, short: { allin: 11 }, shoveShort: { allin: 11 }, veryShort: { allin: 14 }, desperate: { allin: 18 }, critical: { allin: 28 } },
 };
 
 // ===== BLUFF RANGES =====

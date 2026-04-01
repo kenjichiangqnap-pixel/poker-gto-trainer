@@ -132,7 +132,10 @@ function getCallAmount(scenario) {
 function getSuggestedRaiseSize(scenario) {
   switch (scenario.type) {
     case 'rfi':
-      return getStackCategory(scenario.heroStack) === 'veryShort' || getStackCategory(scenario.heroStack) === 'desperate'
+      return getStackCategory(scenario.heroStack) === 'veryShort'
+          || getStackCategory(scenario.heroStack) === 'shoveShort'
+          || getStackCategory(scenario.heroStack) === 'desperate'
+          || getStackCategory(scenario.heroStack) === 'critical'
         ? scenario.heroStack : Math.round(randFloat(2.0, 2.5) * 10) / 10;
     case 'facingRaise': {
       const raiseAction = scenario.actionsBefore.find(a => a.action === 'raise' && !a.isHero);
@@ -254,7 +257,7 @@ function pickScenarioType(heroPos, stackCat, activePositions) {
   }
   
   const roll = Math.random();
-  if (stackCat === 'veryShort' || stackCat === 'desperate') {
+  if (stackCat === 'shoveShort' || stackCat === 'veryShort' || stackCat === 'desperate' || stackCat === 'critical') {
     if (roll < 0.5) return 'rfi';
     if (roll < 0.8) return 'facingAllin';
     return 'facingRaise';
@@ -366,7 +369,7 @@ function getScenarioDescription(scenario) {
       }
       desc += `<br>你在 <strong>${s.heroPosition}</strong> 位，籌碼 <strong>${s.heroStack} BB</strong>`;
       const cat = getStackCategory(s.heroStack);
-      if (cat === 'veryShort' || cat === 'desperate') {
+      if (cat === 'shoveShort' || cat === 'veryShort' || cat === 'desperate' || cat === 'critical') {
         desc += '<br>⚡ <em>短碼推-蓋模式 (Push or Fold)</em>';
       }
       break;
