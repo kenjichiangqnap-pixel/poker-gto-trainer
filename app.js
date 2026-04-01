@@ -386,9 +386,14 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
       }
       const shoverCandidates = possibleShovers.length > 0 ? possibleShovers : activePositions.filter(p => p !== heroPos);
       const shover = pick(shoverCandidates);
-      // Constrain shover to a realistic push range: 8-27 BB
-      // ~60% chance 8-15 (classic push territory), ~40% 16-27 (AKo/big pairs shove)
-      shoverStack = Math.random() < 0.6 ? randInt(8, 15) : randInt(16, 27);
+      // Realistic shover stacks: 3-20BB
+      // 25% = 3-7 BB (desperate/critical, very wide push)
+      // 50% = 8-14 BB (classic push/fold zone)
+      // 25% = 15-20 BB (tighter push, mostly premiums + Ax)
+      const rng = Math.random();
+      if (rng < 0.25)      shoverStack = randInt(3, 7);
+      else if (rng < 0.75) shoverStack = randInt(8, 14);
+      else                 shoverStack = randInt(15, 20);
       stacks[shover] = shoverStack; // update stacks so calling math is consistent
       pot += shoverStack;
       

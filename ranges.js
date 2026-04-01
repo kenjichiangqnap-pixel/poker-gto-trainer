@@ -95,43 +95,43 @@ function getICMMultiplier(icm) {
 
 // ===== RFI (Raise First In) ranges =====
 // deep/medium/short → open-raise. shoveShort/veryShort/desperate/critical → all-in or fold.
-// Push % based on Nash equilibrium; more callers (early pos) = tighter push range.
-// BTN shoves into SB+BB, SB shoves into BB only → BTN~SB widest non-blind pushers.
+// Push ranges based on Nash equilibrium for 6-max with antes.
+// Early positions tighter (more callers behind); late positions much wider.
 const RFI_BASE = {
   UTG: {
-    deep:       { raise: 22 }, medium: { raise: 20 }, short: { raise: 25 },
-    shoveShort: { allin: 37 },  // ~22% Nash (5 callers)
-    veryShort:  { allin: 51 },  // ~30%
-    desperate:  { allin: 78 },  // ~46%
-    critical:   { allin: 115 }, // ~68%
+    deep:       { raise: 22 }, medium: { raise: 20 }, short: { raise: 18 },
+    shoveShort: { allin: 22 },  // 12-17BB: ~13% (pairs 77+, AKo, AQs-ATs, KQs)
+    veryShort:  { allin: 42 },  // 8-11BB:  ~25% (pairs 55+, Ax suited, AJo+, KQo)
+    desperate:  { allin: 71 },  // 5-7BB:   ~42% (pairs 22+, most Ax, Kx suited, broadways)
+    critical:   { allin: 110 }, // ≤4BB:   ~65% (very wide)
   },
   MP: {
-    deep:       { raise: 28 }, medium: { raise: 26 }, short: { raise: 30 },
-    shoveShort: { allin: 47 },  // ~28% Nash (4 callers)
-    veryShort:  { allin: 61 },  // ~36%
-    desperate:  { allin: 88 },  // ~52%
-    critical:   { allin: 122 }, // ~72%
+    deep:       { raise: 28 }, medium: { raise: 26 }, short: { raise: 24 },
+    shoveShort: { allin: 30 },  // ~18% (pairs 66+, AKo-AJo, ATs+, KQs)
+    veryShort:  { allin: 51 },  // ~30% (pairs 44+, Ax suited, ATo+, KJo+)
+    desperate:  { allin: 81 },  // ~48% (pairs 22+, most broadways, suited connectors)
+    critical:   { allin: 118 }, // ~70%
   },
   CO: {
-    deep:       { raise: 38 }, medium: { raise: 35 }, short: { raise: 40 },
-    shoveShort: { allin: 64 },  // ~38% Nash (3 callers)
-    veryShort:  { allin: 81 },  // ~48%
-    desperate:  { allin: 105 }, // ~62%
-    critical:   { allin: 135 }, // ~80%
+    deep:       { raise: 38 }, medium: { raise: 35 }, short: { raise: 33 },
+    shoveShort: { allin: 42 },  // ~25% (pairs 55+, ATo+, A2s-A9s, KJo+, KTs)
+    veryShort:  { allin: 68 },  // ~40% (pairs 33+, Ax most, KTo+, QJs+)
+    desperate:  { allin: 98 },  // ~58% (very wide)
+    critical:   { allin: 132 }, // ~78%
   },
   BTN: {
-    deep:       { raise: 55 }, medium: { raise: 50 }, short: { raise: 52 },
-    shoveShort: { allin: 85 },  // ~50% Nash (SB+BB)
-    veryShort:  { allin: 105 }, // ~62%
-    desperate:  { allin: 125 }, // ~74%
-    critical:   { allin: 149 }, // ~88%
+    deep:       { raise: 55 }, medium: { raise: 50 }, short: { raise: 48 },
+    shoveShort: { allin: 64 },  // ~38% (pairs 22+, Ax, Kxs, KTo+, QJo, suited connectors)
+    veryShort:  { allin: 93 },  // ~55% (very wide, most suited, broadways)
+    desperate:  { allin: 122 }, // ~72%
+    critical:   { allin: 147 }, // ~87%
   },
   SB: {
-    deep:       { raise: 45 }, medium: { raise: 42 }, short: { raise: 46 },
-    shoveShort: { allin: 88 },  // ~52% Nash (BB only → wider than BTN)
-    veryShort:  { allin: 110 }, // ~65%
-    desperate:  { allin: 132 }, // ~78%
-    critical:   { allin: 155 }, // ~92%
+    deep:       { raise: 45 }, medium: { raise: 42 }, short: { raise: 40 },
+    shoveShort: { allin: 71 },  // ~42% (widest non-blind: vs BB only)
+    veryShort:  { allin: 102 }, // ~60%
+    desperate:  { allin: 129 }, // ~76%
+    critical:   { allin: 152 }, // ~90%
   },
   BB: {
     deep:       { raise: 0 }, medium: { raise: 0 }, short: { raise: 0 },
@@ -241,12 +241,18 @@ function bluffAllowed(icmMult, stackCat) {
 }
 
 // ===== Facing All-in ranges =====
+// Calling ranges depend on shover's stack size (pot odds) and hero position.
+// Shorter shovers = better pot odds = wider calling range.
+// BB calls widest (already invested, closes action); UTG tightest (many left to act).
 const FACING_ALLIN_BASE = {
-  // Based on pot odds and ICM — simplified calling ranges
-  // Wider call when getting good pot odds (short stack shover)
-  short_shove:  { UTG: 12, MP: 14, CO: 16, BTN: 20, SB: 18, BB: 22 },
-  medium_shove: { UTG: 8,  MP: 10, CO: 12, BTN: 15, SB: 14, BB: 18 },
-  deep_shove:   { UTG: 5,  MP: 6,  CO: 8,  BTN: 10, SB: 8,  BB: 12 },
+  // 3-7 BB: getting ~1.5:1 or better; call fairly wide
+  tiny_shove:   { UTG: 18, MP: 22, CO: 28, BTN: 34, SB: 30, BB: 42 },
+  // 8-11 BB: standard short-stack push; moderate calling
+  short_shove:  { UTG: 10, MP: 13, CO: 16, BTN: 20, SB: 18, BB: 25 },
+  // 12-15 BB: larger risk = tighter call
+  medium_shove: { UTG: 6,  MP: 8,  CO: 10, BTN: 14, SB: 12, BB: 18 },
+  // 16-20 BB: only premiums push here, need strong hand to call
+  deep_shove:   { UTG: 4,  MP: 5,  CO: 7,  BTN: 10, SB: 8,  BB: 13 },
 };
 
 // ===== EVALUATION ENGINE =====
@@ -341,9 +347,11 @@ function evaluateFacing3Bet(rank, pos, stackCat, icmMult, handNotation) {
 }
 
 function evaluateFacingAllin(rank, pos, shoverStack, icmMult) {
-  let shoveType = 'medium_shove';
-  if (shoverStack < 12) shoveType = 'short_shove';
-  else if (shoverStack >= 30) shoveType = 'deep_shove';
+  let shoveType;
+  if (shoverStack <= 7)       shoveType = 'tiny_shove';
+  else if (shoverStack <= 11) shoveType = 'short_shove';
+  else if (shoverStack <= 15) shoveType = 'medium_shove';
+  else                        shoveType = 'deep_shove';
   
   const baseCall = FACING_ALLIN_BASE[shoveType]?.[pos] || 8;
   const threshold = Math.round(baseCall * icmMult);
