@@ -94,41 +94,42 @@ function getICMMultiplier(icm) {
 }
 
 // ===== RFI (Raise First In) ranges =====
-// deep/medium/short → open-raise. shoveShort/veryShort/desperate/critical → all-in or fold.
+// deep/medium/short → open-raise. shoveShort → raise (strong) or allin (medium).
+// veryShort/desperate/critical → all-in or fold only.
 // Push ranges based on Nash equilibrium for 6-max with antes.
 // Early positions tighter (more callers behind); late positions much wider.
 const RFI_BASE = {
   UTG: {
     deep:       { raise: 43 }, medium: { raise: 39 }, short: { raise: 35 },
-    shoveShort: { allin: 22 },  // 12-17BB: ~13% (pairs 77+, AKo, AQs-ATs, KQs)
+    shoveShort: { raise: 10, allin: 22 },  // 12-17BB: top ~6% raise, next ~7% shove
     veryShort:  { allin: 42 },  // 8-11BB:  ~25% (pairs 55+, Ax suited, AJo+, KQo)
     desperate:  { allin: 71 },  // 5-7BB:   ~42% (pairs 22+, most Ax, Kx suited, broadways)
     critical:   { allin: 110 }, // ≤4BB:   ~65% (very wide)
   },
   MP: {
     deep:       { raise: 50 }, medium: { raise: 45 }, short: { raise: 41 },
-    shoveShort: { allin: 30 },  // ~18% (pairs 66+, AKo-AJo, ATs+, KQs)
+    shoveShort: { raise: 14, allin: 30 },  // 12-17BB: top ~8% raise, next ~10% shove
     veryShort:  { allin: 51 },  // ~30% (pairs 44+, Ax suited, ATo+, KJo+)
     desperate:  { allin: 81 },  // ~48% (pairs 22+, most broadways, suited connectors)
     critical:   { allin: 118 }, // ~70%
   },
   CO: {
     deep:       { raise: 61 }, medium: { raise: 55 }, short: { raise: 50 },
-    shoveShort: { allin: 42 },  // ~25% (pairs 55+, ATo+, A2s-A9s, KJo+, KTs)
+    shoveShort: { raise: 20, allin: 42 },  // 12-17BB: top ~12% raise, next ~13% shove
     veryShort:  { allin: 68 },  // ~40% (pairs 33+, Ax most, KTo+, QJs+)
     desperate:  { allin: 98 },  // ~58% (very wide)
     critical:   { allin: 132 }, // ~78%
   },
   BTN: {
     deep:       { raise: 101 }, medium: { raise: 90 }, short: { raise: 82 },
-    shoveShort: { allin: 64 },  // ~38% (pairs 22+, Ax, Kxs, KTo+, QJo, suited connectors)
+    shoveShort: { raise: 30, allin: 64 },  // 12-17BB: top ~18% raise, next ~20% shove
     veryShort:  { allin: 93 },  // ~55% (very wide, most suited, broadways)
     desperate:  { allin: 122 }, // ~72%
     critical:   { allin: 147 }, // ~87%
   },
   SB: {
     deep:       { raise: 50 }, medium: { raise: 46 }, short: { raise: 42 },
-    shoveShort: { allin: 71 },  // ~42% (widest non-blind: vs BB only)
+    shoveShort: { raise: 25, allin: 71 },  // 12-17BB: top ~15% raise, next ~27% shove
     veryShort:  { allin: 102 }, // ~60%
     desperate:  { allin: 129 }, // ~76%
     critical:   { allin: 152 }, // ~90%
@@ -280,6 +281,14 @@ function evaluateRFI(rank, pos, stackCat, icmMult) {
   const base = RFI_BASE[pos]?.[stackCat];
   if (!base) return 'fold';
   
+  // shoveShort has both raise and allin: top hands raise, mid hands shove
+  if (base.raise !== undefined && base.allin !== undefined) {
+    const raiseThreshold = Math.round(base.raise * icmMult);
+    const allinThreshold = Math.round(base.allin * icmMult);
+    if (rank < raiseThreshold) return 'raise';
+    if (rank < allinThreshold) return 'allin';
+    return 'fold';
+  }
   if (base.allin !== undefined) {
     const threshold = Math.round(base.allin * icmMult);
     return rank < threshold ? 'allin' : 'fold';
@@ -390,17 +399,23 @@ function getActionLabel(action) {
 function getAvailableActions(scenarioType, stackCat) {
   switch (scenarioType) {
     case 'rfi':
-      if (stackCat === 'veryShort' || stackCat === 'desperate') {
+      if (stackCat === 'veryShort' || stackCat === 'desperate' || stackCat === 'critical') {
         return ['fold', 'allin'];
+      }
+      if (stackCat === 'shoveShort') {
+        return ['fold', 'raise', 'allin'];
       }
       return ['fold', 'raise'];
     case 'facingRaise':
-      if (stackCat === 'veryShort' || stackCat === 'desperate') {
+      if (stackCat === 'veryShort' || stackCat === 'desperate' || stackCat === 'critical') {
         return ['fold', 'allin'];
+      }
+      if (stackCat === 'shoveShort') {
+        return ['fold', 'call', 'allin'];
       }
       return ['fold', 'call', 'raise'];
     case 'facing3Bet':
-      if (stackCat === 'short' || stackCat === 'veryShort' || stackCat === 'desperate') {
+      if (stackCat === 'short' || stackCat === 'shoveShort' || stackCat === 'veryShort' || stackCat === 'desperate' || stackCat === 'critical') {
         return ['fold', 'allin'];
       }
       return ['fold', 'call', 'raise'];
