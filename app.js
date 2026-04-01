@@ -182,9 +182,11 @@ function generateScenario() {
     stacks[pos] = randInt(stage.stackRange[0], stage.stackRange[1]);
   });
   
-  // Apply custom stack for hero if set
+  // Apply custom stack
   if (state.settings.stackMode === 'custom') {
     stacks[heroPos] = state.settings.customStack;
+  } else if (state.settings.stackMode === 'customAll') {
+    activePositions.forEach(pos => { stacks[pos] = state.settings.customStack; });
   }
   const heroStack = stacks[heroPos];
   const stackCat = getStackCategory(heroStack);
@@ -858,9 +860,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Stack mode radio
   document.querySelectorAll('input[name="stack-mode"]').forEach(radio => {
     radio.addEventListener('change', () => {
-      const isCustom = radio.value === 'custom' && radio.checked;
-      document.getElementById('custom-stack').disabled = !isCustom;
-      state.settings.stackMode = document.querySelector('input[name="stack-mode"]:checked').value;
+      const mode = document.querySelector('input[name="stack-mode"]:checked').value;
+      document.getElementById('custom-stack').disabled = (mode === 'random');
+      state.settings.stackMode = mode;
     });
   });
   
