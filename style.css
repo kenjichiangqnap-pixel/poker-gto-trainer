@@ -266,9 +266,15 @@ header {
   position: absolute;
   transform: translate(-50%, -50%);
   display: flex;
+  flex-direction: column;   /* label stacks below chips naturally */
+  align-items: center;
+  gap: 0;
+}
+.chip-pile-cols {           /* inner row of chip columns */
+  display: flex;
   flex-direction: row;
-  gap: 5px;
   align-items: flex-end;
+  gap: 4px;
 }
 /* A single column of chips */
 .chip-col {
@@ -280,34 +286,19 @@ header {
 /* Individual chip disc */
 .chip {
   width: 20px;
-  height: 5px;
+  height: 6px;
   border-radius: 50%;
   margin-bottom: -2px;
-  position: relative;
-}
-.chip::after {            /* stripe on top */
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 2px;
-  border-radius: 2px;
-  opacity: 0.5;
 }
 .chip.c-green  { background: linear-gradient(180deg,#3cba5c 0%,#1a7f37 60%,#0f5c26 100%);
                  box-shadow: 0 2px 3px rgba(0,0,0,0.5); }
-.chip.c-green::after  { background: #7AE89A; }
 .chip.c-purple { background: linear-gradient(180deg,#b07eff 0%,#7c3aed 60%,#4c1d95 100%);
                  box-shadow: 0 2px 3px rgba(0,0,0,0.5); }
-.chip.c-purple::after { background: #d4b4fe; }
 .chip.c-orange { background: linear-gradient(180deg,#fbbf24 0%,#d97706 60%,#92400e 100%);
                  box-shadow: 0 2px 3px rgba(0,0,0,0.5); }
-.chip.c-orange::after { background: #fde68a; }
-/* Label under the pile */
+/* Label under the pile (normal flow below .chip-pile-cols) */
 .chip-pile-label {
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-top: 4px;
   font-size: 0.58rem;
   font-weight: 700;
   white-space: nowrap;

@@ -97,15 +97,17 @@ function formatBB(amount) {
 }
 
 // ===== CHIP STACK RENDERING =====
-// Approximate pixel positions (as % of table width/height) where chips
-// sit between each seat and the center of the table.
+// Chip pile positions: halfway between each seat edge and table center.
+// Table is an ellipse; coordinates as % of .poker-table width/height.
+// Seat positions: SB top-left, BB top-right, UTG right-mid, MP bottom-right,
+//                CO bottom-left, BTN left-mid  (see CSS #seat-*)
 const CHIP_POS = {
-  SB:  { left: '32%', top: '28%' },
-  BB:  { left: '68%', top: '28%' },
-  UTG: { left: '71%', top: '48%' },
-  MP:  { left: '68%', top: '72%' },
-  CO:  { left: '32%', top: '72%' },
-  BTN: { left: '29%', top: '48%' },
+  SB:  { left: '38%', top: '38%' },
+  BB:  { left: '62%', top: '38%' },
+  UTG: { left: '65%', top: '50%' },
+  MP:  { left: '62%', top: '62%' },
+  CO:  { left: '38%', top: '62%' },
+  BTN: { left: '35%', top: '50%' },
 };
 
 // Convert BB amount to chip count (1–8 chips)
@@ -136,7 +138,9 @@ function makePile(pos, stacks, label) {
   pile.className = 'chip-pile';
   pile.style.left = offset.left;
   pile.style.top  = offset.top;
-  pile.innerHTML = stacks.map(s => chipCol(s.n, s.color)).join('') +
+  // cols wrapper (row) + label below (normal flow)
+  pile.innerHTML =
+    `<div class="chip-pile-cols">${stacks.map(s => chipCol(s.n, s.color)).join('')}</div>` +
     `<div class="chip-pile-label">${label}</div>`;
   area.appendChild(pile);
 }
@@ -539,7 +543,7 @@ function renderScenario(scenario) {
           actionLabel.classList.add('fold');
           break;
         case 'raise':
-          actionLabel.textContent = `⬆ ${formatBB(Math.round(preAction.amount * 10) / 10)}`;
+          actionLabel.textContent = `R: ${formatBB(Math.round(preAction.amount * 10) / 10)}`;
           actionLabel.classList.add('raise');
           break;
         case '3bet':
