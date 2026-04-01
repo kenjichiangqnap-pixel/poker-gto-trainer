@@ -171,10 +171,29 @@ function generateScenario() {
   const tablePlayers = Math.min(6, playersLeft);
   const activePositions = getActivePositions(tablePlayers);
   
-  // Filter hero positions by user settings
+  // Filter hero positions by user settings, then by what scenarios are possible
   const allowedPositions = state.settings.positions;
-  const heroOptions = activePositions.filter(p => allowedPositions.includes(p));
-  const heroPos = heroOptions.length > 0 ? pick(heroOptions) : pick(activePositions);
+  const allowedScenarios = state.settings.scenarioTypes;
+  const baseHeroOptions = activePositions.filter(p => allowedPositions.includes(p));
+
+  // For each candidate position, check if at least one allowed scenario is feasible
+  const validHeroOptions = baseHeroOptions.filter(pos => {
+    const posIdx = activePositions.indexOf(pos);
+    const before      = activePositions.slice(0, posIdx);
+    const after       = activePositions.slice(posIdx + 1);
+    const validOpeners = before.filter(p => p !== 'UTG'); // opener must be >= MP
+    const isLast      = pos === 'BB';
+    return (
+      allowedScenarios.includes('rfi') ||
+      (allowedScenarios.includes('facingRaise') && (isLast || validOpeners.length > 0)) ||
+      (allowedScenarios.includes('facing3Bet')  && !['UTG','MP'].includes(pos) && after.length > 0) ||
+      (allowedScenarios.includes('facingAllin') && (before.length > 0 || isLast))
+    );
+  });
+
+  const heroPos = validHeroOptions.length > 0 ? pick(validHeroOptions)
+                : baseHeroOptions.length > 0  ? pick(baseHeroOptions)
+                : pick(activePositions);
   
   // Generate stacks only for active players
   const stacks = {};
@@ -258,8 +277,9 @@ function pickScenarioType(heroPos, stackCat, activePositions) {
     return filtered[Math.floor(Math.random() * filtered.length)];
   }
 
-  // First to act can only open
-  if (isFirstToAct) return allowed.includes('rfi') ? 'rfi' : allowedPick(['facingAllin', 'facingRaise']);
+  // First to act can only open (rfi). If rfi not allowed, this position was
+  // already filtered out by generateScenario, but guard just in case.
+  if (isFirstToAct) return allowed.includes('rfi') ? 'rfi' : (allowed[0] || 'rfi');
 
   // BB can't open or be 3-bet
   if (isLastToAct) {
