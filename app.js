@@ -858,12 +858,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // Stack mode radio
+  function updateStackInputState() {
+    const mode = document.querySelector('input[name="stack-mode"]:checked').value;
+    const input = document.getElementById('custom-stack');
+    input.disabled = (mode === 'random');
+    state.settings.stackMode = mode;
+  }
   document.querySelectorAll('input[name="stack-mode"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      const mode = document.querySelector('input[name="stack-mode"]:checked').value;
-      document.getElementById('custom-stack').disabled = (mode === 'random');
-      state.settings.stackMode = mode;
-    });
+    radio.addEventListener('change', updateStackInputState);
+    radio.addEventListener('click',  updateStackInputState);
   });
   
   // Custom stack input
