@@ -104,34 +104,36 @@ const RFI_BASE = {
 // Returns { threebet: N, call: N } (cumulative from top)
 const FACING_RAISE_BASE = {
   // Facing UTG open (tight opener → tighter 3bet, narrow call range)
+  // SB: polarized squeeze (OOP post-flop → squeeze or fold, minimal calling)
+  // BB: wide defense (already invested 1BB + closes action → defend much wider)
   vs_UTG: {
     HJ:  { deep: { threebet: 6, call: 14 }, medium: { threebet: 5, call: 12 }, short: { threebet: 5, call: 10 }, veryShort: { allin: 10 }, desperate: { allin: 18 } },
     CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 6, call: 15 }, short: { threebet: 6, call: 12 }, veryShort: { allin: 12 }, desperate: { allin: 22 } },
     BTN: { deep: { threebet: 10, call: 22 }, medium: { threebet: 8, call: 18 }, short: { threebet: 7, call: 14 }, veryShort: { allin: 15 }, desperate: { allin: 25 } },
-    SB:  { deep: { threebet: 8, call: 14 }, medium: { threebet: 6, call: 12 }, short: { threebet: 6, call: 10 }, veryShort: { allin: 12 }, desperate: { allin: 20 } },
-    BB:  { deep: { threebet: 8, call: 25 }, medium: { threebet: 6, call: 20 }, short: { threebet: 6, call: 16 }, veryShort: { allin: 14 }, desperate: { allin: 25 } },
+    SB:  { deep: { threebet: 12, call: 16 }, medium: { threebet: 10, call: 13 }, short: { threebet: 8, call: 11 }, veryShort: { allin: 14 }, desperate: { allin: 22 } },
+    BB:  { deep: { threebet: 11, call: 52 }, medium: { threebet: 9, call: 40 }, short: { threebet: 8, call: 28 }, veryShort: { allin: 18 }, desperate: { allin: 32 } },
   },
   // Facing HJ open
   vs_HJ: {
     CO:  { deep: { threebet: 8, call: 18 }, medium: { threebet: 7, call: 15 }, short: { threebet: 6, call: 12 }, veryShort: { allin: 14 }, desperate: { allin: 24 } },
     BTN: { deep: { threebet: 12, call: 24 }, medium: { threebet: 10, call: 20 }, short: { threebet: 8, call: 16 }, veryShort: { allin: 18 }, desperate: { allin: 28 } },
-    SB:  { deep: { threebet: 8, call: 15 }, medium: { threebet: 7, call: 12 }, short: { threebet: 6, call: 10 }, veryShort: { allin: 13 }, desperate: { allin: 22 } },
-    BB:  { deep: { threebet: 10, call: 28 }, medium: { threebet: 8, call: 22 }, short: { threebet: 7, call: 18 }, veryShort: { allin: 16 }, desperate: { allin: 28 } },
+    SB:  { deep: { threebet: 14, call: 17 }, medium: { threebet: 12, call: 14 }, short: { threebet: 10, call: 11 }, veryShort: { allin: 16 }, desperate: { allin: 25 } },
+    BB:  { deep: { threebet: 13, call: 60 }, medium: { threebet: 11, call: 48 }, short: { threebet: 9, call: 34 }, veryShort: { allin: 20 }, desperate: { allin: 36 } },
   },
   // Facing CO open
   vs_CO: {
     BTN: { deep: { threebet: 14, call: 28 }, medium: { threebet: 12, call: 24 }, short: { threebet: 10, call: 18 }, veryShort: { allin: 20 }, desperate: { allin: 32 } },
-    SB:  { deep: { threebet: 10, call: 16 }, medium: { threebet: 8, call: 14 }, short: { threebet: 7, call: 12 }, veryShort: { allin: 14 }, desperate: { allin: 24 } },
-    BB:  { deep: { threebet: 12, call: 32 }, medium: { threebet: 10, call: 26 }, short: { threebet: 8, call: 20 }, veryShort: { allin: 18 }, desperate: { allin: 30 } },
+    SB:  { deep: { threebet: 16, call: 20 }, medium: { threebet: 14, call: 16 }, short: { threebet: 11, call: 13 }, veryShort: { allin: 18 }, desperate: { allin: 28 } },
+    BB:  { deep: { threebet: 16, call: 68 }, medium: { threebet: 13, call: 55 }, short: { threebet: 11, call: 42 }, veryShort: { allin: 24 }, desperate: { allin: 40 } },
   },
-  // Facing BTN open
+  // Facing BTN open (BTN opens very wide → SB/BB defend most aggressively)
   vs_BTN: {
-    SB:  { deep: { threebet: 14, call: 22 }, medium: { threebet: 12, call: 18 }, short: { threebet: 10, call: 14 }, veryShort: { allin: 18 }, desperate: { allin: 30 } },
-    BB:  { deep: { threebet: 14, call: 38 }, medium: { threebet: 12, call: 32 }, short: { threebet: 10, call: 25 }, veryShort: { allin: 22 }, desperate: { allin: 35 } },
+    SB:  { deep: { threebet: 22, call: 27 }, medium: { threebet: 18, call: 22 }, short: { threebet: 14, call: 17 }, veryShort: { allin: 22 }, desperate: { allin: 34 } },
+    BB:  { deep: { threebet: 20, call: 82 }, medium: { threebet: 16, call: 66 }, short: { threebet: 13, call: 52 }, veryShort: { allin: 30 }, desperate: { allin: 48 } },
   },
-  // Facing SB open (from BB only)
+  // Facing SB open (BB only: maximize defense vs wide SB range + position advantage)
   vs_SB: {
-    BB:  { deep: { threebet: 16, call: 42 }, medium: { threebet: 14, call: 36 }, short: { threebet: 12, call: 28 }, veryShort: { allin: 25 }, desperate: { allin: 38 } },
+    BB:  { deep: { threebet: 24, call: 94 }, medium: { threebet: 20, call: 78 }, short: { threebet: 16, call: 62 }, veryShort: { allin: 35 }, desperate: { allin: 55 } },
   }
 };
 
@@ -152,26 +154,26 @@ const THREEBET_BLUFF = {
     HJ:  [],
     CO:  ['A2s','A3s','A4s','A5s'],
     BTN: ['A2s','A3s','A4s','A5s'],
-    SB:  ['A2s','A3s','A4s'],
-    BB:  [],
+    SB:  ['A2s','A3s','A4s','A5s'],           // SB polarized: squeeze or fold OOP
+    BB:  ['A2s','A3s'],                        // BB wide squeeze range
   },
   vs_HJ: {
     CO:  ['A2s','A3s','A4s','A5s'],
     BTN: ['A2s','A3s','A4s','A5s','K2s','K3s'],
-    SB:  ['A2s','A3s','A4s','A5s'],
-    BB:  ['A2s','A3s','A4s'],
+    SB:  ['A2s','A3s','A4s','A5s','K2s'],      // SB expands vs looser opener
+    BB:  ['A2s','A3s','A4s','A5s'],
   },
   vs_CO: {
     BTN: ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'],
-    SB:  ['A2s','A3s','A4s','A5s'],
-    BB:  ['A2s','A3s','A4s','A5s'],
+    SB:  ['A2s','A3s','A4s','A5s','K2s','K3s'], // SB vs CO: wider blocker range
+    BB:  ['A2s','A3s','A4s','A5s','K2s'],
   },
   vs_BTN: {
-    SB:  ['A2s','A3s','A4s','A5s','K2s','K3s'],
-    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s'],
+    SB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s'], // SB vs BTN: most aggressive polarization
+    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s','K6s'], // BB vs BTN: maximize squeeze
   },
   vs_SB: {
-    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s'],
+    BB:  ['A2s','A3s','A4s','A5s','K2s','K3s','K4s','K5s','K6s','K7s','Q2s','Q3s'], // BB vs SB: widest bluff range
   },
 };
 
