@@ -229,6 +229,18 @@ function generateScenario() {
     [card1, card2] = dealCards();
   }
   handNotation = handToNotation(card1, card2);
+
+  // Deal opponent cards for facingAllin — constrained to shover's push range
+  let opponentCards = null;
+  if (scenarioType === 'facingAllin') {
+    const shoverAction = actionsBefore.find(a => a.action === 'allin');
+    if (shoverAction) {
+      const oppStackCat = getStackCategory(shoverStack || stacks[shoverAction.position] || 10);
+      const pushRangeSize = getRFIRangeSize(shoverAction.position, oppStackCat, stage.icm);
+      const [oc1, oc2] = pushRangeSize > 0 ? dealConstrainedHand(pushRangeSize) : dealCards();
+      opponentCards = [oc1, oc2];
+    }
+  }
   
   const paidPlaces = Math.max(3, Math.floor(playersLeft * 0.6));
   
@@ -238,6 +250,7 @@ function generateScenario() {
     heroStack,
     cards: [card1, card2],
     handNotation,
+    opponentCards,
     stacks,
     stage,
     type: scenarioType,
@@ -705,25 +718,18 @@ function buildOpponentRangeHTML(scenario) {
       if (!aa) return '';
       const oppPos = aa.position;
       const oppStack = scenario.shoverStack || (scenario.stacks && scenario.stacks[oppPos]) || 10;
-      const allinScenario = {
-        type: 'rfi',
-        heroPosition: oppPos,
-        heroStack: oppStack,
-        icmPressure: scenario.icmPressure,
-      };
-      const grid = getRangeChart(allinScenario);
-      const allinHands = [];
-      for (let r = 0; r < 13; r++) {
-        for (let c = 0; c < 13; c++) {
-          if (grid[r][c].action === 'allin') allinHands.push(grid[r][c].hand);
-        }
-      }
-      if (allinHands.length === 0) return '';
-      const handsHTML = allinHands.map(h => `<span class="allin-hand-badge">${h}</span>`).join('');
+      if (!scenario.opponentCards) return '';
+      const [oc1, oc2] = scenario.opponentCards;
+      const redSuits = ['h', 'd'];
+      const c1Class = redSuits.includes(oc1.suit) ? 'opp-card red' : 'opp-card';
+      const c2Class = redSuits.includes(oc2.suit) ? 'opp-card red' : 'opp-card';
       return `<div class="opp-range-section">
-        <div class="opp-range-title">對手全押範圍參考</div>
-        <div class="opp-range-subtitle">對手 (${oppPos}) ${oppStack} BB 全押手牌 (${allinHands.length} 種)</div>
-        <div class="allin-hands-list">${handsHTML}</div>
+        <div class="opp-range-title">對手推牌手牌</div>
+        <div class="opp-range-subtitle">對手 (${oppPos}) ${oppStack} BB 全押</div>
+        <div class="opp-cards-display">
+          <span class="${c1Class}">${formatCard(oc1)}</span>
+          <span class="${c2Class}">${formatCard(oc2)}</span>
+        </div>
       </div>`;
     }
     default:
