@@ -660,9 +660,12 @@ function showResult(isCorrect, playerAction, correctAction, scenario) {
   // Opponent range
   resultHTML += buildOpponentRangeHTML(scenario);
   resultBox.innerHTML = resultHTML;
-  
-  // Scroll result into view on mobile
-  setTimeout(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+
+  // Scroll to next-hand button so user can continue without hunting for it
+  setTimeout(() => {
+    const btn = document.getElementById('next-hand-btn');
+    if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
 }
 
 function buildOpponentRangeHTML(scenario) {
@@ -702,14 +705,26 @@ function buildOpponentRangeHTML(scenario) {
       if (!aa) return '';
       const oppPos = aa.position;
       const oppStack = scenario.shoverStack || (scenario.stacks && scenario.stacks[oppPos]) || 10;
-      title = `對手 (${oppPos}) 全押範圍 — ${oppStack} BB`;
-      oppScenario = {
+      const allinScenario = {
         type: 'rfi',
         heroPosition: oppPos,
         heroStack: oppStack,
         icmPressure: scenario.icmPressure,
       };
-      break;
+      const grid = getRangeChart(allinScenario);
+      const allinHands = [];
+      for (let r = 0; r < 13; r++) {
+        for (let c = 0; c < 13; c++) {
+          if (grid[r][c].action === 'allin') allinHands.push(grid[r][c].hand);
+        }
+      }
+      if (allinHands.length === 0) return '';
+      const handsHTML = allinHands.map(h => `<span class="allin-hand-badge">${h}</span>`).join('');
+      return `<div class="opp-range-section">
+        <div class="opp-range-title">對手全押範圍參考</div>
+        <div class="opp-range-subtitle">對手 (${oppPos}) ${oppStack} BB 全押手牌 (${allinHands.length} 種)</div>
+        <div class="allin-hands-list">${handsHTML}</div>
+      </div>`;
     }
     default:
       return ''; // rfi: hero is first aggressor, no opponent range

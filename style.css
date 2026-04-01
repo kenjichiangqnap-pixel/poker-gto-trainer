@@ -735,6 +735,22 @@ header {
   color: var(--text-muted);
   margin-bottom: 6px;
 }
+.allin-hands-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.allin-hand-badge {
+  background: rgba(251,191,36,0.18);
+  border: 1px solid rgba(251,191,36,0.45);
+  color: #fbbf24;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 5px;
+  white-space: nowrap;
+}
 
 .inline-range-wrapper {
   margin-top: 12px;
