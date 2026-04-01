@@ -15,6 +15,7 @@ const state = {
     stackMode: 'random',   // 'random' | 'custom'
     customStack: 25,
     positions: ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'],
+    scenarioTypes: ['rfi', 'facingRaise', 'facing3Bet', 'facingAllin'],
   },
 };
 
@@ -97,40 +98,29 @@ function formatBB(amount) {
 }
 
 // ===== CHIP STACK RENDERING =====
-// Chip pile positions: halfway between each seat edge and table center.
-// Table is an ellipse; coordinates as % of .poker-table width/height.
-// Seat positions: SB top-left, BB top-right, UTG right-mid, MP bottom-right,
-//                CO bottom-left, BTN left-mid  (see CSS #seat-*)
+// Chip positions: just inside the table edge, near each seat.
+// Table is an ellipse; x/y as % of .poker-table width/height.
 const CHIP_POS = {
-  SB:  { left: '38%', top: '38%' },
-  BB:  { left: '62%', top: '38%' },
-  UTG: { left: '65%', top: '50%' },
-  MP:  { left: '62%', top: '62%' },
-  CO:  { left: '38%', top: '62%' },
-  BTN: { left: '35%', top: '50%' },
+  SB:  { left: '26%', top: '14%' },
+  BB:  { left: '70%', top: '14%' },
+  UTG: { left: '82%', top: '48%' },
+  MP:  { left: '70%', top: '82%' },
+  CO:  { left: '26%', top: '82%' },
+  BTN: { left: '15%', top: '48%' },
 };
 
-// Convert BB amount to chip count (1–8 chips)
+// Return 1 chip for small bets, 2 for larger
 function chipCount(amount) {
-  if (amount <= 2)   return 1;
-  if (amount <= 3.5) return 2;
-  if (amount <= 6)   return 3;
-  if (amount <= 10)  return 4;
-  if (amount <= 16)  return 5;
-  if (amount <= 28)  return 6;
-  if (amount <= 45)  return 7;
-  return 8;
+  return amount > 4 ? 2 : 1;
 }
 
-// Build a single chip column HTML
+// Build a single chip column HTML (n chips stacked)
 function chipCol(n, color) {
   return `<div class="chip-col">${'<div class="chip c-' + color + '"></div>'.repeat(n)}</div>`;
 }
 
-// Render a chip pile on the table
-// stacks: array of { n, color } for each side-by-side column
-// label: text shown below
-function makePile(pos, stacks, label) {
+// Render chip pile near a seat — NO label text
+function makePile(pos, stacks) {
   const offset = CHIP_POS[pos];
   if (!offset) return;
   const area = document.getElementById('chip-area');
@@ -138,10 +128,8 @@ function makePile(pos, stacks, label) {
   pile.className = 'chip-pile';
   pile.style.left = offset.left;
   pile.style.top  = offset.top;
-  // cols wrapper (row) + label below (normal flow)
   pile.innerHTML =
-    `<div class="chip-pile-cols">${stacks.map(s => chipCol(s.n, s.color)).join('')}</div>` +
-    `<div class="chip-pile-label">${label}</div>`;
+    `<div class="chip-pile-cols">${stacks.map(s => chipCol(s.n, s.color)).join('')}</div>`;
   area.appendChild(pile);
 }
 
@@ -152,38 +140,22 @@ function renderChipsOnTable(scenario) {
     case 'facingRaise': {
       const ra = scenario.actionsBefore.find(a => a.action === 'raise');
       if (!ra) return;
-      const n = chipCount(ra.amount);
-      // 兩塊籌碼：兩疊高度略有差異
-      makePile(ra.position, [{ n, color: 'green' }, { n: Math.max(1, n - 1), color: 'green' }],
-               formatBB(ra.amount));
+      makePile(ra.position, [{ n: chipCount(ra.amount), color: 'green' }]);
       break;
     }
     case 'facing3Bet': {
-      // 英雄的開牌籌碼（兩塊）
       const heroOpen = scenario.actionsBefore.find(a => a.isHero);
-      if (heroOpen) {
-        const n = chipCount(heroOpen.amount);
-        makePile(scenario.heroPosition,
-                 [{ n, color: 'green' }, { n: Math.max(1, n - 1), color: 'green' }],
-                 formatBB(heroOpen.amount));
-      }
-      // 3-bet 者的籌碼（小疊，紫色）
+      if (heroOpen) makePile(scenario.heroPosition, [{ n: 2, color: 'green' }]);
       const tb = scenario.actionsBefore.find(a => a.action === '3bet');
-      if (tb) {
-        const n = chipCount(tb.amount);
-        makePile(tb.position, [{ n, color: 'purple' }], `3B ${formatBB(tb.amount)}`);
-      }
+      if (tb) makePile(tb.position, [{ n: 2, color: 'purple' }]);
       break;
     }
     case 'facingAllin': {
       const aa = scenario.actionsBefore.find(a => a.action === 'allin');
       if (!aa) return;
-      const amt = scenario.stacks[aa.position] || aa.amount || 10;
-      const n = chipCount(amt);
-      makePile(aa.position, [{ n, color: 'orange' }], 'ALL IN');
+      makePile(aa.position, [{ n: 2, color: 'orange' }]);
       break;
     }
-    // rfi: no chips yet
   }
 }
 
@@ -336,31 +308,41 @@ function pickScenarioType(heroPos, stackCat, activePositions) {
   const heroIdx = activePositions.indexOf(heroPos);
   const isFirstToAct = heroIdx === 0;
   const isLastToAct = heroPos === 'BB';
-  const playersBeforeHero = activePositions.slice(0, heroIdx);
   const playersAfterHero = activePositions.slice(heroIdx + 1);
-  
-  // First to act can only open
-  if (isFirstToAct) return 'rfi';
-  
-  // BB (last to act) can't open or be 3-bet
-  if (isLastToAct) {
-    return Math.random() < 0.6 ? 'facingRaise' : 'facingAllin';
+  const allowed = state.settings.scenarioTypes;
+
+  // Helper: pick from allowed list, falling back to 'rfi' if nothing fits
+  function allowedPick(candidates) {
+    const filtered = candidates.filter(t => allowed.includes(t));
+    if (filtered.length === 0) return allowed[0] || 'rfi';
+    return filtered[Math.floor(Math.random() * filtered.length)];
   }
-  
+
+  // First to act can only open
+  if (isFirstToAct) return allowed.includes('rfi') ? 'rfi' : allowedPick(['facingAllin', 'facingRaise']);
+
+  // BB can't open or be 3-bet
+  if (isLastToAct) {
+    return allowedPick(['facingRaise', 'facingRaise', 'facingAllin']);
+  }
+
   const roll = Math.random();
   if (stackCat === 'shoveShort' || stackCat === 'veryShort' || stackCat === 'desperate' || stackCat === 'critical') {
-    if (roll < 0.5) return 'rfi';
-    if (roll < 0.8) return 'facingAllin';
-    return 'facingRaise';
+    if (roll < 0.5) return allowedPick(['rfi']);
+    if (roll < 0.8) return allowedPick(['facingAllin']);
+    return allowedPick(['facingRaise']);
   }
-  
-  // Need players after hero for 3-bet scenario
-  const can3Bet = playersAfterHero.length > 0;
-  
-  if (roll < 0.40) return 'rfi';
-  if (roll < 0.70) return 'facingRaise';
-  if (roll < 0.85 && can3Bet) return 'facing3Bet';
-  return 'facingAllin';
+
+  const can3Bet = playersAfterHero.length > 0 && allowed.includes('facing3Bet');
+
+  // Weighted random within allowed types
+  const pool = [];
+  if (allowed.includes('rfi'))         pool.push('rfi','rfi','rfi','rfi');         // 40%
+  if (allowed.includes('facingRaise')) pool.push('facingRaise','facingRaise','facingRaise'); // 30%
+  if (can3Bet)                         pool.push('facing3Bet','facing3Bet');        // 20%
+  if (allowed.includes('facingAllin')) pool.push('facingAllin');                    // 10%
+  if (pool.length === 0) return 'rfi';
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
@@ -965,6 +947,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       state.settings.positions = checked.map(c => c.value);
+    });
+  });
+
+  // Scenario type checkboxes
+  document.querySelectorAll('.scenario-cb input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = [...document.querySelectorAll('.scenario-cb input[type="checkbox"]:checked')];
+      if (checked.length === 0) { cb.checked = true; return; }
+      state.settings.scenarioTypes = checked.map(c => c.value);
     });
   });
   

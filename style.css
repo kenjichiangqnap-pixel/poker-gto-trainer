@@ -285,29 +285,17 @@ header {
 }
 /* Individual chip disc */
 .chip {
-  width: 20px;
-  height: 6px;
+  width: 24px;
+  height: 8px;
   border-radius: 50%;
-  margin-bottom: -2px;
+  margin-bottom: -3px;
 }
 .chip.c-green  { background: linear-gradient(180deg,#3cba5c 0%,#1a7f37 60%,#0f5c26 100%);
-                 box-shadow: 0 2px 3px rgba(0,0,0,0.5); }
+                 box-shadow: 0 2px 4px rgba(0,0,0,0.6); }
 .chip.c-purple { background: linear-gradient(180deg,#b07eff 0%,#7c3aed 60%,#4c1d95 100%);
-                 box-shadow: 0 2px 3px rgba(0,0,0,0.5); }
+                 box-shadow: 0 2px 4px rgba(0,0,0,0.6); }
 .chip.c-orange { background: linear-gradient(180deg,#fbbf24 0%,#d97706 60%,#92400e 100%);
-                 box-shadow: 0 2px 3px rgba(0,0,0,0.5); }
-/* Label under the pile (normal flow below .chip-pile-cols) */
-.chip-pile-label {
-  margin-top: 4px;
-  font-size: 0.58rem;
-  font-weight: 700;
-  white-space: nowrap;
-  background: rgba(0,0,0,0.65);
-  color: #fff;
-  border-radius: 4px;
-  padding: 1px 4px;
-  line-height: 1.4;
-}
+                 box-shadow: 0 2px 4px rgba(0,0,0,0.6); }
 
 /* ========== Seats ========== */
 .seat {
