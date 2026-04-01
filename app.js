@@ -385,15 +385,26 @@ function generatePreActions(heroPos, stacks, scenarioType, activePositions) {
       }
       const shoverCandidates = possibleShovers.length > 0 ? possibleShovers : activePositions.filter(p => p !== heroPos);
       const shover = pick(shoverCandidates);
-      // Realistic shover stacks: 3-20BB
-      // 25% = 3-7 BB (desperate/critical, very wide push)
-      // 50% = 8-14 BB (classic push/fold zone)
-      // 25% = 15-20 BB (tighter push, mostly premiums + Ax)
-      const rng = Math.random();
-      if (rng < 0.25)      shoverStack = randInt(3, 7);
-      else if (rng < 0.75) shoverStack = randInt(8, 14);
-      else                 shoverStack = randInt(15, 20);
-      stacks[shover] = shoverStack; // update stacks so calling math is consistent
+      
+      // Determine shover stack based on stack mode
+      if (state.settings.stackMode === 'customAll') {
+        // All players have the same custom stack
+        shoverStack = stacks[shover];
+      } else if (state.settings.stackMode === 'custom') {
+        // Hero is custom, others use stage range — use existing generated stack
+        // but cap at a realistic push range (can't push more than what they have)
+        shoverStack = stacks[shover];
+      } else {
+        // Random mode: realistic shover stacks 3-20BB
+        // 25% = 3-7 BB (desperate/critical, very wide push)
+        // 50% = 8-14 BB (classic push/fold zone)
+        // 25% = 15-20 BB (tighter push, mostly premiums + Ax)
+        const rng = Math.random();
+        if (rng < 0.25)      shoverStack = randInt(3, 7);
+        else if (rng < 0.75) shoverStack = randInt(8, 14);
+        else                 shoverStack = randInt(15, 20);
+        stacks[shover] = shoverStack;
+      }
       pot += shoverStack;
       
       for (let i = 0; i < heroIdx; i++) {
