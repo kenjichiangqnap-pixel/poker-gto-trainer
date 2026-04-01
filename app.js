@@ -722,7 +722,7 @@ function buildOpponentRangeHTML(scenario) {
   </div>`;
 }
 
-
+function buildInlineRangeChart(scenario, highlightHand) {
   const grid = getRangeChart(scenario);
   const highlightGrid = highlightHand ? handToGrid(highlightHand) : null;
   
