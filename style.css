@@ -808,12 +808,12 @@ header {
   min-width: 28px;
   min-height: 28px;
 }
-.range-cell.action-raise { background: #1a7f37; color: #fff; }
-.range-cell.action-call  { background: #1f6feb; color: #fff; }
+.range-cell.action-raise { background: #d32f2f; color: #fff; }
+.range-cell.action-call  { background: #2e7d32; color: #fff; }
 .range-cell.action-fold  { background: var(--bg3); color: #484f58; }
-.range-cell.action-allin { background: #9e6a03; color: #fff; }
-.range-cell.action-threebet { background: #8957e5; color: #fff; }
-.range-cell.action-bluff { background: #bc4c00; color: #fff; }
+.range-cell.action-allin { background: #7b1fa2; color: #fff; }
+.range-cell.action-threebet { background: #d32f2f; color: #fff; }
+.range-cell.action-bluff { background: #f9a825; color: #000; }
 .range-cell.is-hero-hand {
   outline: 2.5px solid var(--gold);
   outline-offset: -1px;
@@ -834,12 +834,12 @@ header {
   border-radius: 3px;
   display: inline-block;
 }
-.legend-color.raise { background: #1a7f37; }
-.legend-color.bluff { background: #bc4c00; }
-.legend-color.call  { background: #1f6feb; }
+.legend-color.raise { background: #d32f2f; }
+.legend-color.bluff { background: #f9a825; }
+.legend-color.call  { background: #2e7d32; }
 .legend-color.fold  { background: var(--bg3); border: 1px solid var(--border); }
-.legend-color.allin { background: #9e6a03; }
-.legend-color.threebet { background: #8957e5; }
+.legend-color.allin { background: #7b1fa2; }
+.legend-color.threebet { background: #d32f2f; }
 
 /* ========== Scrollbar ========== */
 ::-webkit-scrollbar { width: 4px; }
